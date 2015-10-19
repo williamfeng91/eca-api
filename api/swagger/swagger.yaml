@@ -1,8 +1,15 @@
 swagger: "2.0"
+
+################################################################################
+#                              API Information                                 #
+################################################################################
 info:
   version: "0.0.1"
-  title: Hello World App
-# during dev, should point to your local machine
+  title: Education Consultant Assistant API
+
+################################################################################
+#                  Host, Base Path, Schemes and Content Types                  #
+################################################################################
 host: localhost:10010
 # basePath prefixes all resource paths
 basePath: /api/v0/
@@ -17,44 +24,689 @@ consumes:
 # format of the responses to the client (Accepts)
 produces:
   - application/json
+
+################################################################################
+#                                   Tags                                       #
+################################################################################
+tags:
+  - name: Customer
+  - name: Checklist
+  - name: StickyNote
+
+################################################################################
+#                                  Security                                    #
+################################################################################
+
+################################################################################
+#                                   Parameters                                 #
+################################################################################
+parameters:
+  customer-id:
+    name: customer-id
+    in: path
+    description: The id of a customer
+    type: string
+    required: true
+  customer-status-id:
+    name: customer-status-id
+    in: path
+    description: The id of a customer status
+    type: string
+    required: true
+  checklist-id:
+    name: checklist-id
+    in: path
+    description: The id of a checklist
+    type: string
+    required: true
+  checklist-item-id:
+    name: checklist-item-id
+    in: path
+    description: The id of a checklist item
+    type: string
+    required: true
+  sticky-note-id:
+    name: sticky-note-id
+    in: path
+    description: The id of a sticky note
+    type: string
+    required: true
+
+################################################################################
+#                                           Paths                              #
+################################################################################
 paths:
-  /hello:
-    # binds a127 app logic to a route
-    x-swagger-router-controller: hello_world
-    get:
-      description: Returns 'Hello' to the caller
-      # used as the method name of the controller
-      operationId: hello
+  /customers:
+    post:
+      tags:
+        - Customer
+      description: ""
+      summary: Creates a new customer
       parameters:
         - name: name
-          in: query
-          description: The name of the person to whom to say hello
-          required: false
+          in: body
+          description: The NewCustomer object
+          required: true
+          schema:
+            $ref: "#/definitions/NewCustomer"
+      responses:
+        201:
+          description: Created
+          schema:
+            $ref: "#/definitions/Customer"
+        400:
+          description: Bad request
+        500:
+          description: Internal server error
+  /customers/{customer-id}:
+    parameters:
+      - $ref: '#/parameters/customer-id'
+    get:
+      tags:
+        - Customer
+      description: ""
+      summary: Returns a customer
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/Customer"
+        404:
+          description: Not found
+        500:
+          description: Internal server error
+    put:
+      tags:
+        - Customer
+      description: ""
+      summary: Updates a customer
+      parameters:
+        - name: name
+          in: body
+          description: The Customer object
+          required: true
+          schema:
+            $ref: "#/definitions/Customer"
+      responses:
+        204:
+          description: No content
+        400:
+          description: Bad request
+        404:
+          description: Not found
+        500:
+          description: Internal server error
+    delete:
+      tags:
+        - Customer
+      description: ""
+      summary: Deletes a customer
+      responses:
+        204:
+          description: No content
+        404:
+          description: Not found
+        500:
+          description: Internal server error
+  /customers/{customer-id}/archived:
+    parameters:
+      - $ref: '#/parameters/customer-id'
+    put:
+      tags:
+        - Customer
+      description: ""
+      summary: Updates the archived status of a customer
+      consumes:
+        - application/x-www-form-urlencoded
+      parameters:
+        - name: value
+          in: formData
+          description: Set to true to archive / to false to unarchive
+          required: true
+          type: boolean
+      responses:
+        204:
+          description: No content
+        400:
+          description: Bad request
+        404:
+          description: Not found
+        500:
+          description: Internal server error
+  /customers/{customer-id}/birthday:
+    parameters:
+      - $ref: '#/parameters/customer-id'
+    put:
+      tags:
+        - Customer
+      description: ""
+      summary: Updates the birthday of a customer
+      consumes:
+        - application/x-www-form-urlencoded
+      parameters:
+        - name: value
+          in: formData
+          description: The birthday of a customer in milliseconds since epoch
+          required: true
+          type: integer
+      responses:
+        204:
+          description: No content
+        400:
+          description: Bad request
+        404:
+          description: Not found
+        500:
+          description: Internal server error
+  /customers/{customer-id}/visa_expiry_date:
+    parameters:
+      - $ref: '#/parameters/customer-id'
+    put:
+      tags:
+        - Customer
+      description: ""
+      summary: Updates the visa expiry date of a customer
+      consumes:
+        - application/x-www-form-urlencoded
+      parameters:
+        - name: value
+          in: formData
+          description: The visa expiry date of a customer in milliseconds since epoch
+          required: true
+          type: integer
+      responses:
+        204:
+          description: No content
+        400:
+          description: Bad request
+        404:
+          description: Not found
+        500:
+          description: Internal server error
+  /customers/{customer-id}/{property}:
+    parameters:
+      - $ref: '#/parameters/customer-id'
+    put:
+      tags:
+        - Customer
+      description: ""
+      summary: Updates a customer property
+      consumes:
+        - application/x-www-form-urlencoded
+      parameters:
+        - name: property
+          in: path
+          description: The property name
+          required: true
+          type: string
+          enum:
+            - email
+            - surname
+            - given_name
+            - nickname
+            - real_name
+            - gender
+            - mobile
+            - qq
+            - wechat
+            - au_address
+            - foreign_address
+        - name: value
+          in: formData
+          description: The property value
+          required: true
           type: string
       responses:
-        "200":
-          description: Success
+        204:
+          description: No content
+        400:
+          description: Bad request
+        404:
+          description: Not found
+        500:
+          description: Internal server error
+  /customers/{customer-id}/checklists:
+    parameters:
+      - $ref: '#/parameters/customer-id'
+    post:
+      tags:
+        - Checklist
+      description: ""
+      summary: Creates a new checklist for a customer
+      parameters:
+        - name: name
+          in: body
+          description: The NewChecklist object
+          required: true
           schema:
-            # a pointer to a definition
-            $ref: "#/definitions/HelloWorldResponse"
-        # responses may fall through to errors
-        default:
-          description: Error
+            $ref: "#/definitions/NewChecklist"
+      responses:
+        201:
+          description: Created
           schema:
-            $ref: "#/definitions/ErrorResponse"
+            $ref: "#/definitions/Checklist"
+        400:
+          description: Bad request
+        500:
+          description: Internal server error
+    get:
+      tags:
+        - Checklist
+      description: ""
+      summary: Returns all checklists for a customer
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/Checklist"
+        404:
+          description: Not found
+        500:
+          description: Internal server error
+  /checklists/{checklist-id}:
+    parameters:
+      - $ref: '#/parameters/checklist-id'
+    get:
+      tags:
+        - Checklist
+      description: ""
+      summary: Returns a checklist
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/Checklist"
+        404:
+          description: Not found
+        500:
+          description: Internal server error
+    put:
+      tags:
+        - Checklist
+      description: ""
+      summary: Updates a checklist
+      parameters:
+        - name: name
+          in: body
+          description: The Checklist object
+          required: true
+          schema:
+            $ref: "#/definitions/Checklist"
+      responses:
+        204:
+          description: No content
+        400:
+          description: Bad request
+        404:
+          description: Not found
+        500:
+          description: Internal server error
+    delete:
+      tags:
+        - Checklist
+      description: ""
+      summary: Deletes a checklist
+      responses:
+        204:
+          description: No content
+        404:
+          description: Not found
+        500:
+          description: Internal server error
+  /checklists/{checklist-id}/{property}:
+    parameters:
+      - $ref: '#/parameters/checklist-id'
+    put:
+      tags:
+        - Checklist
+      description: ""
+      summary: Updates a checklist property
+      consumes:
+        - application/x-www-form-urlencoded
+      parameters:
+        - name: property
+          in: path
+          description: The property name
+          required: true
+          type: string
+          enum:
+            - name
+        - name: value
+          in: formData
+          description: The property value
+          required: true
+          type: string
+      responses:
+        204:
+          description: No content
+        400:
+          description: Bad request
+        404:
+          description: Not found
+        500:
+          description: Internal server error
+  /checklists/{checklist-id}/checklist-items:
+    parameters:
+      - $ref: '#/parameters/checklist-id'
+    post:
+      tags:
+        - Checklist
+      description: ""
+      summary: Creates a new checklist item in a checklist
+      parameters:
+        - name: name
+          in: body
+          description: The NewChecklistItem object
+          required: true
+          schema:
+            $ref: "#/definitions/NewChecklistItem"
+      responses:
+        201:
+          description: Created
+          schema:
+            $ref: "#/definitions/ChecklistItem"
+        400:
+          description: Bad request
+        500:
+          description: Internal server error
+    get:
+      tags:
+        - Checklist
+      description: ""
+      summary: Returns all checklist items in a checklist
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/ChecklistItem"
+        404:
+          description: Not found
+        500:
+          description: Internal server error
+  /checklist-items/{checklist-item-id}:
+    parameters:
+      - $ref: '#/parameters/checklist-item-id'
+    get:
+      tags:
+        - Checklist
+      description: ""
+      summary: Returns a checklist item
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: "#/definitions/ChecklistItem"
+        404:
+          description: Not found
+        500:
+          description: Internal server error
+    put:
+      tags:
+        - Checklist
+      description: ""
+      summary: Updates a checklist item
+      parameters:
+        - name: name
+          in: body
+          description: The ChecklistItem object
+          required: true
+          schema:
+            $ref: "#/definitions/ChecklistItem"
+      responses:
+        204:
+          description: No content
+        400:
+          description: Bad request
+        404:
+          description: Not found
+        500:
+          description: Internal server error
+    delete:
+      tags:
+        - Checklist
+      description: ""
+      summary: Deletes a checklist item
+      responses:
+        204:
+          description: No content
+        404:
+          description: Not found
+        500:
+          description: Internal server error
+  /checklist-items/{checklist-item-id}/checked:
+    parameters:
+      - $ref: '#/parameters/checklist-item-id'
+    put:
+      tags:
+        - Checklist
+      description: ""
+      summary: Updates the checked status of a checklist item
+      consumes:
+        - application/x-www-form-urlencoded
+      parameters:
+        - name: value
+          in: formData
+          description: Set to true to check / to false to uncheck
+          required: true
+          type: boolean
+      responses:
+        204:
+          description: No content
+        400:
+          description: Bad request
+        404:
+          description: Not found
+        500:
+          description: Internal server error
+  /checklist-items/{checklist-item-id}/{property}:
+    parameters:
+      - $ref: '#/parameters/checklist-item-id'
+    put:
+      tags:
+        - Checklist
+      description: ""
+      summary: Updates a checklist item property
+      consumes:
+        - application/x-www-form-urlencoded
+      parameters:
+        - name: property
+          in: path
+          description: The property name
+          required: true
+          type: string
+          enum:
+            - text
+        - name: value
+          in: formData
+          description: The property value
+          required: true
+          type: string
+      responses:
+        204:
+          description: No content
+        400:
+          description: Bad request
+        404:
+          description: Not found
+        500:
+          description: Internal server error
   /swagger:
     x-swagger-pipe: swagger_raw
-# complex objects have schema definitions
+
+################################################################################
+#                                 Definitions                                  #
+################################################################################
 definitions:
-  HelloWorldResponse:
+  Customer:
+    type: object
+    allOf:
+      - $ref: "#/definitions/NewCustomer"
+      - required:
+        - id
+        - status
+        - list_pos
+        - workflow_pos
+        - isArchived
+        - created_at
+        properties:
+          id:
+            $ref: "#/definitions/ObjectId"
+          status:
+            $ref: "#/definitions/CustomerStatus"
+          list_pos:
+            $ref: "#/definitions/SortablePosition"
+          workflow_pos:
+            $ref: "#/definitions/SortablePosition"
+          isArchived:
+            type: boolean
+            default: false
+          checklists:
+            type: array
+            items:
+              $ref: "#/definitions/Checklist"
+          sticky_notes:
+            type: array
+            items:
+              $ref: "#/definitions/StickyNote"
+          created_at:
+            type: integer
+          updated_at:
+            type: integer
+  NewCustomer:
+    type: object
     required:
-      - message
+      - surname
+      - given_name
+      - gender
     properties:
-      message:
+      email:
         type: string
-  ErrorResponse:
+        format: email
+      surname:
+        type: string
+      given_name:
+        type: string
+      nickname:
+        type: string
+      real_name:
+        type: string
+      gender:
+        type: string
+        enum:
+          - male
+          - female
+      birthday:
+        type: integer
+      mobile:
+        type: string
+      qq:
+        type: string
+      wechat:
+        type: string
+      au_address:
+        type: string
+      foreign_address:
+        type: string
+      visa_expiry_date:
+        type: integer
+  CustomerStatus:
+    type: object
+    allOf:
+      - $ref: "#/definitions/NewCustomerStatus"
+      - required:
+        - id
+        properties:
+          id:
+            $ref: "#/definitions/ObjectId"
+  NewCustomerStatus:
+    type: object
     required:
-      - message
+      - name
+      - color
     properties:
-      message:
+      name:
         type: string
+      color:
+        type: string
+        enum:
+          - red
+          - orange
+          - yellow
+          - green
+          - blue
+          - purple
+          - black
+  Checklist:
+    type: object
+    allOf:
+      - $ref: "#/definitions/NewChecklist"
+      - required:
+        - id
+        - pos
+        - items
+        properties:
+          id:
+            $ref: "#/definitions/ObjectId"
+          pos:
+            $ref: "#/definitions/SortablePosition"
+          items:
+            type: array
+            items:
+              $ref: "#/definitions/ChecklistItem"
+  NewChecklist:
+    type: object
+    required:
+      - name
+    properties:
+      name:
+        type: string
+  ChecklistItem:
+    type: object
+    allOf:
+      - $ref: "#/definitions/NewChecklistItem"
+      - required:
+        - id
+        - checked
+        - pos
+        properties:
+          id:
+            $ref: "#/definitions/ObjectId"
+          checked:
+            type: boolean
+            default: false
+          pos:
+            $ref: "#/definitions/SortablePosition"
+  NewChecklistItem:
+    type: object
+    required:
+      - text
+    properties:
+      text:
+        type: string
+  StickyNote:
+    type: object
+    required:
+      - text
+    properties:
+      id:
+        $ref: "#/definitions/ObjectId"
+      text:
+        type: string
+      pos:
+        $ref: "#/definitions/SortablePosition"
+        
+  # internal types
+  ObjectId:
+    type: string
+    pattern: ^[0-9a-fA-F]{24}$
+  SortablePosition:
+    type: integer
+    format: int32
+    minimum: 0
