@@ -1,0 +1,23 @@
+{
+  "name": "eca-api",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Education Consultant Assistant RESTful API",
+  "repository": "https://github.com/williamfeng91/eca-api",
+  "keywords": [],
+  "author": "William Feng",
+  "license": "MIT",
+  "main": "app.js",
+  "dependencies": {
+    "express": "^4.12.3",
+    "swagger-express-mw": "^0.1.0"
+  },
+  "devDependencies": {
+    "should": "^7.1.0",
+    "supertest": "^1.0.0"
+  },
+  "scripts": {
+    "start": "node app.js",
+    "test": "swagger project test"
+  }
+}
