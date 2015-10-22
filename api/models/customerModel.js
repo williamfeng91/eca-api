@@ -23,10 +23,26 @@ var CustomerSchema = new Schema({
     updated_at: Date
 });
 
-var Customer = module.exports = mongoose.model('Customer', CustomerSchema);
+CustomerSchema.pre('save', function(next) {
+    var now = new Date();
 
-module.exports.getById = function(id, callback) {
+    // update the updated_at field
+    this.updated_at = now;
+
+    // if item is new, add created_at
+    if (!this.created_at) {
+        this.created_at = now;
+    }
+
+    next();
+});
+
+var Customer = mongoose.model('Customer', CustomerSchema);
+
+Customer.getById = function(id, callback) {
     Customer.findById(id)
         .populate('status')
         .exec(callback);
 };
+
+module.exports = Customer;
