@@ -29,9 +29,10 @@ produces:
 #                                   Tags                                       #
 ################################################################################
 tags:
+  - name: Workflow Status
   - name: Customer
   - name: Checklist
-  - name: StickyNote
+  - name: Sticky Note
 
 ################################################################################
 #                                  Security                                    #
@@ -41,34 +42,34 @@ tags:
 #                                   Parameters                                 #
 ################################################################################
 parameters:
-  customer-id:
-    name: customer-id
+  workflowStatusId:
+    name: workflowStatusId
     in: path
-    description: The id of a customer
+    description: The _id of a workflow status
     type: string
     required: true
-  customer-status-id:
-    name: customer-status-id
+  customerId:
+    name: customerId
     in: path
-    description: The id of a customer status
+    description: The _id of a customer
     type: string
     required: true
-  checklist-id:
-    name: checklist-id
+  checklistId:
+    name: checklistId
     in: path
-    description: The id of a checklist
+    description: The _id of a checklist
     type: string
     required: true
-  checklist-item-id:
-    name: checklist-item-id
+  checklistItemId:
+    name: checklistItemId
     in: path
-    description: The id of a checklist item
+    description: The _id of a checklist item
     type: string
     required: true
-  sticky-note-id:
-    name: sticky-note-id
+  stickyNoteId:
+    name: stickyNoteId
     in: path
-    description: The id of a sticky note
+    description: The _id of a sticky note
     type: string
     required: true
 
@@ -76,6 +77,81 @@ parameters:
 #                                           Paths                              #
 ################################################################################
 paths:
+  ##### Workflow Status #####
+  /workflow-statuses:
+    post:
+      tags:
+        - Workflow Status
+      description: ""
+      summary: Creates a new workflow status type
+      parameters:
+        - name: name
+          in: body
+          description: The NewWorkflowStatus object
+          required: true
+          schema:
+            $ref: "#/definitions/NewWorkflowStatus"
+      responses:
+        201:
+          description: Created
+          schema:
+            $ref: "#/definitions/WorkflowStatus"
+        400:
+          description: Bad request
+        500:
+          description: Internal server error
+  /workflow-statuses/{workflowStatusId}:
+    parameters:
+      - $ref: '#/parameters/workflowStatusId'
+    get:
+      tags:
+        - Workflow Status
+      description: ""
+      summary: Returns a workflow status type
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/WorkflowStatus"
+        404:
+          description: Not found
+        500:
+          description: Internal server error
+    put:
+      tags:
+        - Workflow Status
+      description: ""
+      summary: Updates a workflow status type
+      parameters:
+        - name: name
+          in: body
+          description: The WorkflowStatus object
+          required: true
+          schema:
+            $ref: "#/definitions/WorkflowStatus"
+      responses:
+        204:
+          description: No content
+        400:
+          description: Bad request
+        404:
+          description: Not found
+        500:
+          description: Internal server error
+    delete:
+      tags:
+        - Workflow Status
+      description: ""
+      summary: Deletes a workflow status type
+      responses:
+        204:
+          description: No content
+        404:
+          description: Not found
+        500:
+          description: Internal server error
+
+  ##### Customer #####
   /customers:
     post:
       tags:
@@ -98,10 +174,12 @@ paths:
           description: Bad request
         500:
           description: Internal server error
-  /customers/{customer-id}:
+  /customers/{customerId}:
+    x-swagger-router-controller: customers
     parameters:
-      - $ref: '#/parameters/customer-id'
+      - $ref: '#/parameters/customerId'
     get:
+      operationId: getCustomerById
       tags:
         - Customer
       description: ""
@@ -148,9 +226,9 @@ paths:
           description: Not found
         500:
           description: Internal server error
-  /customers/{customer-id}/archived:
+  /customers/{customerId}/archived:
     parameters:
-      - $ref: '#/parameters/customer-id'
+      - $ref: '#/parameters/customerId'
     put:
       tags:
         - Customer
@@ -173,9 +251,9 @@ paths:
           description: Not found
         500:
           description: Internal server error
-  /customers/{customer-id}/birthday:
+  /customers/{customerId}/birthday:
     parameters:
-      - $ref: '#/parameters/customer-id'
+      - $ref: '#/parameters/customerId'
     put:
       tags:
         - Customer
@@ -188,7 +266,8 @@ paths:
           in: formData
           description: The birthday of a customer in milliseconds since epoch
           required: true
-          type: integer
+          type: string
+          format: date-time
       responses:
         204:
           description: No content
@@ -198,22 +277,23 @@ paths:
           description: Not found
         500:
           description: Internal server error
-  /customers/{customer-id}/visa_expiry_date:
+  /customers/{customerId}/visa_expiry_date:
     parameters:
-      - $ref: '#/parameters/customer-id'
+      - $ref: '#/parameters/customerId'
     put:
       tags:
         - Customer
       description: ""
-      summary: Updates the visa expiry date of a customer
+      summary: Updates the visa expiry date-time of a customer
       consumes:
         - application/x-www-form-urlencoded
       parameters:
         - name: value
           in: formData
-          description: The visa expiry date of a customer in milliseconds since epoch
+          description: The visa expiry date-time of a customer in milliseconds since epoch
           required: true
-          type: integer
+          type: string
+          format: date-time
       responses:
         204:
           description: No content
@@ -223,9 +303,9 @@ paths:
           description: Not found
         500:
           description: Internal server error
-  /customers/{customer-id}/{property}:
+  /customers/{customerId}/{property}:
     parameters:
-      - $ref: '#/parameters/customer-id'
+      - $ref: '#/parameters/customerId'
     put:
       tags:
         - Customer
@@ -265,9 +345,11 @@ paths:
           description: Not found
         500:
           description: Internal server error
-  /customers/{customer-id}/checklists:
+
+  ##### Checklist #####
+  /customers/{customerId}/checklists:
     parameters:
-      - $ref: '#/parameters/customer-id'
+      - $ref: '#/parameters/customerId'
     post:
       tags:
         - Checklist
@@ -305,9 +387,9 @@ paths:
           description: Not found
         500:
           description: Internal server error
-  /checklists/{checklist-id}:
+  /checklists/{checklistId}:
     parameters:
-      - $ref: '#/parameters/checklist-id'
+      - $ref: '#/parameters/checklistId'
     get:
       tags:
         - Checklist
@@ -355,9 +437,9 @@ paths:
           description: Not found
         500:
           description: Internal server error
-  /checklists/{checklist-id}/{property}:
+  /checklists/{checklistId}/{property}:
     parameters:
-      - $ref: '#/parameters/checklist-id'
+      - $ref: '#/parameters/checklistId'
     put:
       tags:
         - Checklist
@@ -387,9 +469,9 @@ paths:
           description: Not found
         500:
           description: Internal server error
-  /checklists/{checklist-id}/checklist-items:
+  /checklists/{checklistId}/checklist-items:
     parameters:
-      - $ref: '#/parameters/checklist-id'
+      - $ref: '#/parameters/checklistId'
     post:
       tags:
         - Checklist
@@ -427,9 +509,9 @@ paths:
           description: Not found
         500:
           description: Internal server error
-  /checklist-items/{checklist-item-id}:
+  /checklist-items/{checklistItemId}:
     parameters:
-      - $ref: '#/parameters/checklist-item-id'
+      - $ref: '#/parameters/checklistItemId'
     get:
       tags:
         - Checklist
@@ -480,9 +562,9 @@ paths:
           description: Not found
         500:
           description: Internal server error
-  /checklist-items/{checklist-item-id}/checked:
+  /checklist-items/{checklistItemId}/checked:
     parameters:
-      - $ref: '#/parameters/checklist-item-id'
+      - $ref: '#/parameters/checklistItemId'
     put:
       tags:
         - Checklist
@@ -505,9 +587,9 @@ paths:
           description: Not found
         500:
           description: Internal server error
-  /checklist-items/{checklist-item-id}/{property}:
+  /checklist-items/{checklistItemId}/{property}:
     parameters:
-      - $ref: '#/parameters/checklist-item-id'
+      - $ref: '#/parameters/checklistItemId'
     put:
       tags:
         - Checklist
@@ -537,6 +619,131 @@ paths:
           description: Not found
         500:
           description: Internal server error
+
+  ##### Sticky Note #####
+  /customers/{customerId}/sticky-notes:
+    parameters:
+      - $ref: '#/parameters/customerId'
+    post:
+      tags:
+        - Sticky Note
+      description: ""
+      summary: Creates a new sticky note for a customer
+      parameters:
+        - name: name
+          in: body
+          description: The NewStickyNote object
+          required: true
+          schema:
+            $ref: "#/definitions/NewStickyNote"
+      responses:
+        201:
+          description: Created
+          schema:
+            $ref: "#/definitions/StickyNote"
+        400:
+          description: Bad request
+        500:
+          description: Internal server error
+    get:
+      tags:
+        - Sticky Note
+      description: ""
+      summary: Returns all sticky notes for a customer
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/StickyNote"
+        404:
+          description: Not found
+        500:
+          description: Internal server error
+  /sticky-notes/{stickyNoteId}:
+    parameters:
+      - $ref: '#/parameters/stickyNoteId'
+    get:
+      tags:
+        - Sticky Note
+      description: ""
+      summary: Returns a sticky note
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/StickyNote"
+        404:
+          description: Not found
+        500:
+          description: Internal server error
+    put:
+      tags:
+        - Sticky Note
+      description: ""
+      summary: Updates a sticky note
+      parameters:
+        - name: name
+          in: body
+          description: The StickyNote object
+          required: true
+          schema:
+            $ref: "#/definitions/StickyNote"
+      responses:
+        204:
+          description: No content
+        400:
+          description: Bad request
+        404:
+          description: Not found
+        500:
+          description: Internal server error
+    delete:
+      tags:
+        - Sticky Note
+      description: ""
+      summary: Deletes a sticky note
+      responses:
+        204:
+          description: No content
+        404:
+          description: Not found
+        500:
+          description: Internal server error
+  /sticky-notes/{stickyNoteId}/{property}:
+    parameters:
+      - $ref: '#/parameters/stickyNoteId'
+    put:
+      tags:
+        - Sticky Note
+      description: ""
+      summary: Updates a sticky note property
+      consumes:
+        - application/x-www-form-urlencoded
+      parameters:
+        - name: property
+          in: path
+          description: The property name
+          required: true
+          type: string
+          enum:
+            - name
+        - name: value
+          in: formData
+          description: The property value
+          required: true
+          type: string
+      responses:
+        204:
+          description: No content
+        400:
+          description: Bad request
+        404:
+          description: Not found
+        500:
+          description: Internal server error
+
   /swagger:
     x-swagger-pipe: swagger_raw
 
@@ -549,22 +756,22 @@ definitions:
     allOf:
       - $ref: "#/definitions/NewCustomer"
       - required:
-        - id
+        - _id
         - status
         - list_pos
         - workflow_pos
-        - isArchived
+        - is_archived
         - created_at
         properties:
-          id:
+          _id:
             $ref: "#/definitions/ObjectId"
           status:
-            $ref: "#/definitions/CustomerStatus"
+            $ref: "#/definitions/WorkflowStatus"
           list_pos:
             $ref: "#/definitions/SortablePosition"
           workflow_pos:
             $ref: "#/definitions/SortablePosition"
-          isArchived:
+          is_archived:
             type: boolean
             default: false
           checklists:
@@ -576,9 +783,11 @@ definitions:
             items:
               $ref: "#/definitions/StickyNote"
           created_at:
-            type: integer
+            type: string
+            format: date-time
           updated_at:
-            type: integer
+            type: string
+            format: date-time
   NewCustomer:
     type: object
     required:
@@ -603,7 +812,8 @@ definitions:
           - male
           - female
       birthday:
-        type: integer
+        type: string
+        format: date-time
       mobile:
         type: string
       qq:
@@ -615,17 +825,18 @@ definitions:
       foreign_address:
         type: string
       visa_expiry_date:
-        type: integer
-  CustomerStatus:
+        type: string
+        format: date-time
+  WorkflowStatus:
     type: object
     allOf:
-      - $ref: "#/definitions/NewCustomerStatus"
+      - $ref: "#/definitions/NewWorkflowStatus"
       - required:
-        - id
+        - _id
         properties:
-          id:
+          _id:
             $ref: "#/definitions/ObjectId"
-  NewCustomerStatus:
+  NewWorkflowStatus:
     type: object
     required:
       - name
@@ -648,11 +859,11 @@ definitions:
     allOf:
       - $ref: "#/definitions/NewChecklist"
       - required:
-        - id
+        - _id
         - pos
         - items
         properties:
-          id:
+          _id:
             $ref: "#/definitions/ObjectId"
           pos:
             $ref: "#/definitions/SortablePosition"
@@ -672,11 +883,11 @@ definitions:
     allOf:
       - $ref: "#/definitions/NewChecklistItem"
       - required:
-        - id
+        - _id
         - checked
         - pos
         properties:
-          id:
+          _id:
             $ref: "#/definitions/ObjectId"
           checked:
             type: boolean
@@ -692,16 +903,24 @@ definitions:
         type: string
   StickyNote:
     type: object
+    allOf:
+      - $ref: "#/definitions/NewStickyNote"
+      - required:
+        - _id
+        - pos
+        properties:
+          _id:
+            $ref: "#/definitions/ObjectId"
+          pos:
+            $ref: "#/definitions/SortablePosition"
+  NewStickyNote:
+    type: object
     required:
       - text
     properties:
-      id:
-        $ref: "#/definitions/ObjectId"
       text:
         type: string
-      pos:
-        $ref: "#/definitions/SortablePosition"
-        
+
   # internal types
   ObjectId:
     type: string
