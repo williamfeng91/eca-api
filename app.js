@@ -4,6 +4,9 @@ var SwaggerExpress = require('swagger-express-mw');
 var SwaggerUi = require('swagger-tools/middleware/swagger-ui');
 var mongoose = require('mongoose');
 var boom = require('boom');
+var FileStreamRotator = require('file-stream-rotator');
+var fs = require('fs');
+var morgan = require('morgan');
 
 var db = mongoose.connect('mongodb://localhost/eca');
 var app = require('express')();
@@ -12,6 +15,21 @@ module.exports = app; // for testing
 var config = {
     appRoot: __dirname // required config
 };
+var logDirectory = __dirname + '/log';
+
+// ensure log directory exists
+fs.existsSync(logDirectory) || fs.mkdirSync(logDirectory);
+
+// create a rotating write stream
+var accessLogStream = FileStreamRotator.getStream({
+    filename: logDirectory + '/access-%DATE%.log',
+    frequency: 'daily',
+    verbose: false,
+    date_format: 'YYYYMMDD'
+});
+
+// setup the logger
+app.use(morgan('combined', {stream: accessLogStream}));
 
 SwaggerExpress.create(config, function(err, swaggerExpress) {
     if (err) { throw err; }
