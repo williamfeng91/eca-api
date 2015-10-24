@@ -79,13 +79,15 @@ parameters:
 paths:
   ##### Workflow Status #####
   /workflow-statuses:
+    x-swagger-router-controller: workflowStatuses
     post:
+      operationId: createWorkflowStatus
       tags:
         - Workflow Status
       description: ""
       summary: Creates a new workflow status type
       parameters:
-        - name: name
+        - name: newWorkflowStatus
           in: body
           description: The NewWorkflowStatus object
           required: true
@@ -100,14 +102,20 @@ paths:
           description: Bad request
           schema:
             $ref: "#/definitions/ErrorResponse"
+        409:
+          description: Conflict
+          schema:
+            $ref: "#/definitions/ErrorResponse"
         500:
           description: Internal server error
           schema:
             $ref: "#/definitions/ErrorResponse"
   /workflow-statuses/{workflowStatusId}:
+    x-swagger-router-controller: workflowStatuses
     parameters:
       - $ref: '#/parameters/workflowStatusId'
     get:
+      operationId: getWorkflowStatusById
       tags:
         - Workflow Status
       description: ""
@@ -126,6 +134,7 @@ paths:
           schema:
             $ref: "#/definitions/ErrorResponse"
     put:
+      operationId: updateWorkflowStatus
       tags:
         - Workflow Status
       description: ""
@@ -138,8 +147,8 @@ paths:
           schema:
             $ref: "#/definitions/WorkflowStatus"
       responses:
-        204:
-          description: No content
+        200:
+          description: OK
         400:
           description: Bad request
           schema:
@@ -153,6 +162,7 @@ paths:
           schema:
             $ref: "#/definitions/ErrorResponse"
     delete:
+      operationId: deleteWorkflowStatus
       tags:
         - Workflow Status
       description: ""
@@ -171,13 +181,15 @@ paths:
 
   ##### Customer #####
   /customers:
+    x-swagger-router-controller: customers
     post:
+      operationId: createCustomer
       tags:
         - Customer
       description: ""
       summary: Creates a new customer
       parameters:
-        - name: name
+        - name: newCustomer
           in: body
           description: The NewCustomer object
           required: true
@@ -192,6 +204,27 @@ paths:
           description: Bad request
           schema:
             $ref: "#/definitions/ErrorResponse"
+        409:
+          description: Conflict
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        500:
+          description: Internal server error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+    get:
+      operationId: getCustomers
+      tags:
+        - Customer
+      description: ""
+      summary: Returns a list of customers
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/Customer"
         500:
           description: Internal server error
           schema:
@@ -220,6 +253,7 @@ paths:
           schema:
             $ref: "#/definitions/ErrorResponse"
     put:
+      operationId: updateCustomer
       tags:
         - Customer
       description: ""
@@ -232,8 +266,8 @@ paths:
           schema:
             $ref: "#/definitions/Customer"
       responses:
-        204:
-          description: No content
+        200:
+          description: OK
         400:
           description: Bad request
           schema:
@@ -247,6 +281,7 @@ paths:
           schema:
             $ref: "#/definitions/ErrorResponse"
     delete:
+      operationId: deleteCustomer
       tags:
         - Customer
       description: ""
@@ -439,7 +474,7 @@ paths:
       tags:
         - Checklist
       description: ""
-      summary: Returns all checklists for a customer
+      summary: Returns a list of checklists for a customer
       responses:
         200:
           description: OK
@@ -447,10 +482,6 @@ paths:
             type: array
             items:
               $ref: "#/definitions/Checklist"
-        404:
-          description: Not found
-          schema:
-            $ref: "#/definitions/ErrorResponse"
         500:
           description: Internal server error
           schema:
@@ -585,7 +616,7 @@ paths:
       tags:
         - Checklist
       description: ""
-      summary: Returns all checklist items in a checklist
+      summary: Returns a list of checklist items in a checklist
       responses:
         200:
           description: OK
@@ -593,8 +624,6 @@ paths:
             type: array
             items:
               $ref: "#/definitions/ChecklistItem"
-        404:
-          description: Not found
         500:
           description: Internal server error
   /checklist-items/{checklistItemId}:
@@ -745,8 +774,6 @@ paths:
             type: array
             items:
               $ref: "#/definitions/StickyNote"
-        404:
-          description: Not found
         500:
           description: Internal server error
   /sticky-notes/{stickyNoteId}:
@@ -841,47 +868,82 @@ paths:
 definitions:
   Customer:
     type: object
-    allOf:
-      - $ref: "#/definitions/NewCustomer"
-      - required:
-        - _id
-        - status
-        - list_pos
-        - workflow_pos
-        - is_archived
-        - created_at
-        properties:
-          _id:
-            $ref: "#/definitions/ObjectId"
-          status:
-            $ref: "#/definitions/WorkflowStatus"
-          list_pos:
-            $ref: "#/definitions/SortablePosition"
-          workflow_pos:
-            $ref: "#/definitions/SortablePosition"
-          is_archived:
-            type: boolean
-            default: false
-          checklists:
-            type: array
-            items:
-              $ref: "#/definitions/Checklist"
-          sticky_notes:
-            type: array
-            items:
-              $ref: "#/definitions/StickyNote"
-          created_at:
-            type: string
-            format: date-time
-          updated_at:
-            type: string
-            format: date-time
+    required:
+      - _id
+      - surname
+      - given_name
+      - gender
+      - status
+      - list_pos
+      - workflow_pos
+      - is_archived
+      - created_at
+      - updated_at
+    properties:
+      _id:
+        $ref: "#/definitions/ObjectId"
+      email:
+        type: string
+        format: email
+      surname:
+        type: string
+      given_name:
+        type: string
+      nickname:
+        type: string
+      real_name:
+        type: string
+      gender:
+        type: string
+        enum:
+          - male
+          - female
+      birthday:
+        type: string
+        format: date-time
+      mobile:
+        type: string
+      qq:
+        type: string
+      wechat:
+        type: string
+      au_address:
+        type: string
+      foreign_address:
+        type: string
+      visa_expiry_date:
+        type: string
+        format: date-time
+      status:
+        $ref: "#/definitions/WorkflowStatus"
+      list_pos:
+        $ref: "#/definitions/SortablePosition"
+      workflow_pos:
+        $ref: "#/definitions/SortablePosition"
+      is_archived:
+        type: boolean
+        default: false
+      checklists:
+        type: array
+        items:
+          $ref: "#/definitions/Checklist"
+      sticky_notes:
+        type: array
+        items:
+          $ref: "#/definitions/StickyNote"
+      created_at:
+        type: string
+        format: date-time
+      updated_at:
+        type: string
+        format: date-time
   NewCustomer:
     type: object
     required:
       - surname
       - given_name
       - gender
+      - status
     properties:
       email:
         type: string
@@ -915,15 +977,39 @@ definitions:
       visa_expiry_date:
         type: string
         format: date-time
+      status:
+        $ref: "#/definitions/ObjectId"
+      list_pos:
+        $ref: "#/definitions/SortablePosition"
+      workflow_pos:
+        $ref: "#/definitions/SortablePosition"
+      is_archived:
+        type: boolean
+        default: false
   WorkflowStatus:
     type: object
-    allOf:
-      - $ref: "#/definitions/NewWorkflowStatus"
-      - required:
-        - _id
-        properties:
-          _id:
-            $ref: "#/definitions/ObjectId"
+    required:
+      - _id
+      - name
+      - color
+      - pos
+    properties:
+      _id:
+        $ref: "#/definitions/ObjectId"
+      name:
+        type: string
+      color:
+        type: string
+        enum:
+          - red
+          - orange
+          - yellow
+          - green
+          - blue
+          - purple
+          - black
+      pos:
+        $ref: "#/definitions/SortablePosition"
   NewWorkflowStatus:
     type: object
     required:
@@ -942,6 +1028,8 @@ definitions:
           - blue
           - purple
           - black
+      pos:
+        $ref: "#/definitions/SortablePosition"
   Checklist:
     type: object
     allOf:
@@ -1032,3 +1120,7 @@ definitions:
         type: string
       message:
         type: string
+      details:
+        type: array
+        items:
+          type: object

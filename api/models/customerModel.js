@@ -2,12 +2,12 @@ var mongoose = require('mongoose'),
     Schema = mongoose.Schema;
 
 var CustomerSchema = new Schema({
-    email: String,
-    surname: String,
-    given_name: String,
+    email: { type: String, required: true },
+    surname: { type: String, required: true },
+    given_name: { type: String, required: true },
     nickname: String,
     real_name: String,
-    gender: String,
+    gender: { type: String, required: true },
     birthday: Date,
     mobile: String,
     qq: String,
@@ -15,34 +15,23 @@ var CustomerSchema = new Schema({
     au_address: String,
     foreign_address: String,
     visa_expiry_date: Date,
-    status: { type: Schema.Types.ObjectId, ref: 'WorkflowStatus' },
-    list_pos: { type: Number, default: 0 },
-    workflow_pos: { type: Number, default: 0 },
-    is_archived: { type: Boolean, default: false },
-    created_at: Date,
-    updated_at: Date
-});
-
-CustomerSchema.pre('save', function(next) {
-    var now = new Date();
-
-    // update the updated_at field
-    this.updated_at = now;
-
-    // if item is new, add created_at
-    if (!this.created_at) {
-        this.created_at = now;
+    status: { type: Schema.Types.ObjectId, ref: 'WorkflowStatus', required: true },
+    list_pos: { type: Number, required: true, unique: true },
+    workflow_pos: { type: Number, required: true, unique: true },
+    is_archived: { type: Boolean, default: false }
+},
+{
+    timestamps: {
+        createdAt: 'created_at',
+        updatedAt: 'updated_at'
     }
-
-    next();
 });
 
-var Customer = mongoose.model('Customer', CustomerSchema);
-
-Customer.getById = function(id, callback) {
-    Customer.findById(id)
+// static methods
+CustomerSchema.statics.getById = function(id, callback) {
+    this.findById(id)
         .populate('status')
         .exec(callback);
 };
 
-module.exports = Customer;
+module.exports = mongoose.model('Customer', CustomerSchema);
