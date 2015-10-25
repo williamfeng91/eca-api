@@ -8,12 +8,17 @@ var Customer = models.Customer;
 var WorkflowStatus = models.WorkflowStatus;
 
 var CUSTOMER_NOT_FOUND = 'The customer was not found';
+var WRONG_CUSTOMER_ID = 'Wrong customer ID';
 
 module.exports = {
     createCustomer: createCustomer,
     getCustomers: getCustomers,
     getCustomerById: getCustomerById,
     updateCustomer: updateCustomer,
+    updateCustomerArchived: updateCustomerArchived,
+    updateCustomerBirthday: updateCustomerBirthday,
+    updateCustomerVisaExpiryDate: updateCustomerVisaExpiryDate,
+    updateCustomerProperty: updateCustomerProperty,
     deleteCustomer: deleteCustomer
 };
 
@@ -101,7 +106,7 @@ function updateCustomer(req, res, next) {
     try {
         var _id = mongoose.Types.ObjectId(id);
         if (req.body._id != id) {
-            return next(new boom.badRequest('Wrong customer ID'));
+            return next(new boom.badRequest(WRONG_CUSTOMER_ID));
         }
     } catch (err) {
         return next(new boom.notFound(CUSTOMER_NOT_FOUND));
@@ -134,6 +139,86 @@ function updateCustomer(req, res, next) {
                     return next(new boom.badImplementation());
                 } else {
                     res.json(updatedCustomer);
+                }
+            });
+        }
+    });
+}
+
+function updateCustomerArchived(req, res, next) {
+    var id = req.swagger.params.customerId.value;
+    Customer.getById(id, function(err, customer) {
+        if (err) {
+            return next(new boom.badImplementation());
+        } else if (!customer) {
+            return next(new boom.notFound(CUSTOMER_NOT_FOUND));
+        } else {
+            customer.is_archived = req.query.value;
+            customer.save(function(err, customer) {
+                if (err) {
+                    return next(new boom.badImplementation());
+                } else {
+                    res.json(customer);
+                }
+            });
+        }
+    });
+}
+
+function updateCustomerBirthday(req, res, next) {
+    var id = req.swagger.params.customerId.value;
+    Customer.getById(id, function(err, customer) {
+        if (err) {
+            return next(new boom.badImplementation());
+        } else if (!customer) {
+            return next(new boom.notFound(CUSTOMER_NOT_FOUND));
+        } else {
+            customer.birthday = req.query.value;
+            customer.save(function(err, customer) {
+                if (err) {
+                    return next(new boom.badImplementation());
+                } else {
+                    res.json(customer);
+                }
+            });
+        }
+    });
+}
+
+function updateCustomerVisaExpiryDate(req, res, next) {
+    var id = req.swagger.params.customerId.value;
+    Customer.getById(id, function(err, customer) {
+        if (err) {
+            return next(new boom.badImplementation());
+        } else if (!customer) {
+            return next(new boom.notFound(CUSTOMER_NOT_FOUND));
+        } else {
+            customer.visa_expiry_date = req.query.value;
+            customer.save(function(err, customer) {
+                if (err) {
+                    return next(new boom.badImplementation());
+                } else {
+                    res.json(customer);
+                }
+            });
+        }
+    });
+}
+
+function updateCustomerProperty(req, res, next) {
+    var id = req.swagger.params.customerId.value;
+    Customer.getById(id, function(err, customer) {
+        if (err) {
+            return next(new boom.badImplementation());
+        } else if (!customer) {
+            return next(new boom.notFound(CUSTOMER_NOT_FOUND));
+        } else {
+            customer[req.swagger.params.property.value] = req.query.value;
+            customer.save(function(err, customer) {
+                if (err) {
+                    return next(new boom.badImplementation());
+                } else {
+                    res.json(customer);
                 }
             });
         }

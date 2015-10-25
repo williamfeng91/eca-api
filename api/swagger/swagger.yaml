@@ -45,25 +45,25 @@ parameters:
   workflowStatusId:
     name: workflowStatusId
     in: path
-    description: The _id of a workflow status
+    description: The id of a workflow status
     type: string
     required: true
   customerId:
     name: customerId
     in: path
-    description: The _id of a customer
+    description: The id of a customer
     type: string
     required: true
   checklistId:
     name: checklistId
     in: path
-    description: The _id of a checklist
+    description: The id of a checklist
     type: string
     required: true
   checklistItemId:
     name: checklistItemId
     in: path
-    description: The _id of a checklist item
+    description: The id of a checklist item
     type: string
     required: true
   stickyNoteId:
@@ -259,7 +259,7 @@ paths:
       description: ""
       summary: Updates a customer
       parameters:
-        - name: name
+        - name: updatedCustomer
           in: body
           description: The Customer object
           required: true
@@ -298,9 +298,11 @@ paths:
           schema:
             $ref: "#/definitions/ErrorResponse"
   /customers/{customerId}/archived:
+    x-swagger-router-controller: customers
     parameters:
       - $ref: '#/parameters/customerId'
     put:
+      operationId: updateCustomerArchived
       tags:
         - Customer
       description: ""
@@ -309,13 +311,13 @@ paths:
         - application/x-www-form-urlencoded
       parameters:
         - name: value
-          in: formData
+          in: query
           description: Set to true to archive / to false to unarchive
           required: true
           type: boolean
       responses:
-        204:
-          description: No content
+        200:
+          description: OK
         400:
           description: Bad request
           schema:
@@ -329,19 +331,19 @@ paths:
           schema:
             $ref: "#/definitions/ErrorResponse"
   /customers/{customerId}/birthday:
+    x-swagger-router-controller: customers
     parameters:
       - $ref: '#/parameters/customerId'
     put:
+      operationId: updateCustomerBirthday
       tags:
         - Customer
       description: ""
       summary: Updates the birthday of a customer
-      consumes:
-        - application/x-www-form-urlencoded
       parameters:
         - name: value
-          in: formData
-          description: The birthday of a customer in milliseconds since epoch
+          in: query
+          description: The birthday of a customer
           required: true
           type: string
           format: date-time
@@ -361,25 +363,27 @@ paths:
           schema:
             $ref: "#/definitions/ErrorResponse"
   /customers/{customerId}/visa_expiry_date:
+    x-swagger-router-controller: customers
     parameters:
       - $ref: '#/parameters/customerId'
     put:
+      operationId: updateCustomerVisaExpiryDate
       tags:
         - Customer
       description: ""
-      summary: Updates the visa expiry date-time of a customer
+      summary: Updates the visa expiry date of a customer
       consumes:
         - application/x-www-form-urlencoded
       parameters:
         - name: value
           in: formData
-          description: The visa expiry date-time of a customer in milliseconds since epoch
+          description: The visa expiry date of a customer
           required: true
           type: string
-          format: date-time
+          format: date
       responses:
-        204:
-          description: No content
+        200:
+          description: OK
         400:
           description: Bad request
           schema:
@@ -393,15 +397,15 @@ paths:
           schema:
             $ref: "#/definitions/ErrorResponse"
   /customers/{customerId}/{property}:
+    x-swagger-router-controller: customers
     parameters:
       - $ref: '#/parameters/customerId'
     put:
+      operationId: updateCustomerProperty
       tags:
         - Customer
       description: ""
       summary: Updates a customer property
-      consumes:
-        - application/x-www-form-urlencoded
       parameters:
         - name: property
           in: path
@@ -421,13 +425,13 @@ paths:
             - au_address
             - foreign_address
         - name: value
-          in: formData
+          in: query
           description: The property value
           required: true
           type: string
       responses:
-        204:
-          description: No content
+        200:
+          description: OK
         400:
           description: Bad request
           schema:
@@ -913,7 +917,7 @@ definitions:
         type: string
       visa_expiry_date:
         type: string
-        format: date-time
+        format: date
       status:
         $ref: "#/definitions/WorkflowStatus"
       list_pos:
@@ -976,7 +980,7 @@ definitions:
         type: string
       visa_expiry_date:
         type: string
-        format: date-time
+        format: date
       status:
         $ref: "#/definitions/ObjectId"
       list_pos:

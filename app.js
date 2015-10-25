@@ -49,14 +49,15 @@ SwaggerExpress.create(config, function(err, swaggerExpress) {
         } else if (err.isBoom) {
             // pass on boom error
             error = err;
-        } else if (err.code == 'SCHEMA_VALIDATION_FAILED') {
+        } else if (err.failedValidation) {
             // schema validation error
             error = new boom.badRequest('Input validation failed');
-            error.output.payload.details = err.results.errors;
+            error.output.payload.details = err;
         } else {
             error = new boom.badImplementation();
         }
         res.setHeader('Content-Type', 'application/json');
+        // res.json(err);
         res.status(error.output.statusCode).json(error.output.payload);
     });
 
