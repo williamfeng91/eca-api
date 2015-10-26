@@ -6,17 +6,9 @@ var mongoose = require('mongoose');
 var boom = require('boom');
 var FileStreamRotator = require('file-stream-rotator');
 var fs = require('fs');
-var morgan = require('morgan');
-var winston = require('winston');
+var log4js = require('log4js');
+var logger = log4js.getLogger('app');
 
-var environment = process.env.NODE_ENV;
-var settings;
-if (environment == 'production') {
-    settings = require('./settings');
-} else {
-    settings = require('./settings_dev');
-}
-var db = mongoose.connect(settings.db);
 var app = require('express')();
 module.exports = app; // for testing
 
@@ -24,38 +16,17 @@ var config = {
     appRoot: __dirname // required config
 };
 
-// ensure log directory exists
-fs.existsSync(settings.logDirectory) || fs.mkdirSync(settings.logDirectory);
-
-// set up access log
-var accessLogStream = FileStreamRotator.getStream({
-    filename: settings.logDirectory + '/access.log.%DATE%',
-    frequency: 'daily',
-    verbose: false,
-    date_format: 'YYYYMMDD'
-});
-app.use(morgan('combined', {stream: accessLogStream}));
-
-// set up error log
-var logger = new winston.Logger({
-    transports: [
-        new(winston.transports.DailyRotateFile)({
-            filename: settings.logDirectory + '/eca.log',
-            datePattern: '.yyyyMMdd',
-            level: settings.logLevel
-        }),
-        // new winston.transports.Console({
-        //     level: 'debug',
-        //     handleExceptions: true,
-        //     json: false,
-        //     colorize: true
-        // })
-    ],
-    exitOnError: false
-});
-
 SwaggerExpress.create(config, function(err, swaggerExpress) {
     if (err) { throw err; }
+
+    var settings = swaggerExpress.runner.config;
+    var db = mongoose.connect(settings.db);
+
+    // set up access log
+    app.use(log4js.connectLogger(log4js.getLogger('http'), { level: 'auto' }));
+
+    // set up error log
+    log4js.configure('./config/log4js.json');
 
     // Add swagger-ui (This must be before swaggerExpress.register)
     app.use(SwaggerUi(swaggerExpress.runner.swagger));
@@ -84,6 +55,6 @@ SwaggerExpress.create(config, function(err, swaggerExpress) {
         res.status(error.output.statusCode).json(error.output.payload);
     });
 
-    var port = settings.port;
+    var port = process.env.PORT || settings.port;
     app.listen(port);
 });

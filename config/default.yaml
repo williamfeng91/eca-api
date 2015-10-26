@@ -35,3 +35,9 @@ swagger:
       name: swagger_raw
 
 # any other values in this file are just loaded into the config for application access...
+
+# server
+port: 10010
+
+# database
+db: "mongodb://localhost/test"
