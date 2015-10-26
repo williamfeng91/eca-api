@@ -7,29 +7,52 @@ var boom = require('boom');
 var FileStreamRotator = require('file-stream-rotator');
 var fs = require('fs');
 var morgan = require('morgan');
+var winston = require('winston');
 
-var db = mongoose.connect('mongodb://localhost/eca');
+var environment = process.env.NODE_ENV;
+var settings;
+if (environment == 'production') {
+    settings = require('./settings');
+} else {
+    settings = require('./settings_dev');
+}
+var db = mongoose.connect(settings.db);
 var app = require('express')();
 module.exports = app; // for testing
 
 var config = {
     appRoot: __dirname // required config
 };
-var logDirectory = __dirname + '/log';
 
 // ensure log directory exists
-fs.existsSync(logDirectory) || fs.mkdirSync(logDirectory);
+fs.existsSync(settings.logDirectory) || fs.mkdirSync(settings.logDirectory);
 
-// create a rotating write stream
+// set up access log
 var accessLogStream = FileStreamRotator.getStream({
-    filename: logDirectory + '/access-%DATE%.log',
+    filename: settings.logDirectory + '/access.log.%DATE%',
     frequency: 'daily',
     verbose: false,
     date_format: 'YYYYMMDD'
 });
-
-// setup the logger
 app.use(morgan('combined', {stream: accessLogStream}));
+
+// set up error log
+var logger = new winston.Logger({
+    transports: [
+        new(winston.transports.DailyRotateFile)({
+            filename: settings.logDirectory + '/eca.log',
+            datePattern: '.yyyyMMdd',
+            level: settings.logLevel
+        }),
+        // new winston.transports.Console({
+        //     level: 'debug',
+        //     handleExceptions: true,
+        //     json: false,
+        //     colorize: true
+        // })
+    ],
+    exitOnError: false
+});
 
 SwaggerExpress.create(config, function(err, swaggerExpress) {
     if (err) { throw err; }
@@ -42,7 +65,7 @@ SwaggerExpress.create(config, function(err, swaggerExpress) {
 
     // Error handling
     app.use(function(err, req, res, next) {
-        console.error('Handling error: ' + err);
+        logger.error('Handling error: ' + err);
         var error;
         if (typeof err !== 'object') {
             error = new boom.badImplementation();
@@ -61,6 +84,6 @@ SwaggerExpress.create(config, function(err, swaggerExpress) {
         res.status(error.output.statusCode).json(error.output.payload);
     });
 
-    var port = process.env.PORT || 10010;
+    var port = settings.port;
     app.listen(port);
 });

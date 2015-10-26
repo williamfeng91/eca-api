@@ -97,7 +97,7 @@ paths:
         201:
           description: Created
           schema:
-            $ref: "#/definitions/WorkflowStatus"
+            $ref: "#/definitions/ExpandedWorkflowStatus"
         400:
           description: Bad request
           schema:
@@ -124,7 +124,7 @@ paths:
         200:
           description: OK
           schema:
-            $ref: "#/definitions/WorkflowStatus"
+            $ref: "#/definitions/ExpandedWorkflowStatus"
         404:
           description: Not found
           schema:
@@ -149,6 +149,40 @@ paths:
       responses:
         200:
           description: OK
+          schema:
+            $ref: "#/definitions/ExpandedWorkflowStatus"
+        400:
+          description: Bad request
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        404:
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        500:
+          description: Internal server error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+    patch:
+      operationId: partialUpdateWorkflowStatus
+      tags:
+        - Workflow Status
+      description: ""
+      summary: Partially update a workflow status
+      consumes:
+        - application/merge-patch+json
+      parameters:
+        - name: workflowStatusUpdatePatch
+          in: body
+          description: The WorkflowStatusUpdatePatch object
+          required: true
+          schema:
+            $ref: "#/definitions/WorkflowStatusUpdatePatch"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/ExpandedWorkflowStatus"
         400:
           description: Bad request
           schema:
@@ -199,7 +233,7 @@ paths:
         201:
           description: Created
           schema:
-            $ref: "#/definitions/Customer"
+            $ref: "#/definitions/ExpandedCustomer"
         400:
           description: Bad request
           schema:
@@ -224,7 +258,7 @@ paths:
           schema:
             type: array
             items:
-              $ref: "#/definitions/Customer"
+              $ref: "#/definitions/ExpandedCustomer"
         500:
           description: Internal server error
           schema:
@@ -243,7 +277,7 @@ paths:
         200:
           description: OK
           schema:
-            $ref: "#/definitions/Customer"
+            $ref: "#/definitions/ExpandedCustomer"
         404:
           description: Not found
           schema:
@@ -268,6 +302,40 @@ paths:
       responses:
         200:
           description: OK
+          schema:
+            $ref: "#/definitions/ExpandedCustomer"
+        400:
+          description: Bad request
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        404:
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        500:
+          description: Internal server error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+    patch:
+      operationId: partialUpdateCustomer
+      tags:
+        - Customer
+      description: ""
+      summary: Partially update a customer
+      consumes:
+        - application/merge-patch+json
+      parameters:
+        - name: customerUpdatePatch
+          in: body
+          description: The CustomerUpdatePatch object
+          required: true
+          schema:
+            $ref: "#/definitions/CustomerUpdatePatch"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/ExpandedCustomer"
         400:
           description: Bad request
           schema:
@@ -297,153 +365,149 @@ paths:
           description: Internal server error
           schema:
             $ref: "#/definitions/ErrorResponse"
-  /customers/{customerId}/archived:
-    x-swagger-router-controller: customers
-    parameters:
-      - $ref: '#/parameters/customerId'
-    put:
-      operationId: updateCustomerArchived
-      tags:
-        - Customer
-      description: ""
-      summary: Updates the archived status of a customer
-      consumes:
-        - application/x-www-form-urlencoded
-      parameters:
-        - name: value
-          in: query
-          description: Set to true to archive / to false to unarchive
-          required: true
-          type: boolean
-      responses:
-        200:
-          description: OK
-        400:
-          description: Bad request
-          schema:
-            $ref: "#/definitions/ErrorResponse"
-        404:
-          description: Not found
-          schema:
-            $ref: "#/definitions/ErrorResponse"
-        500:
-          description: Internal server error
-          schema:
-            $ref: "#/definitions/ErrorResponse"
-  /customers/{customerId}/birthday:
-    x-swagger-router-controller: customers
-    parameters:
-      - $ref: '#/parameters/customerId'
-    put:
-      operationId: updateCustomerBirthday
-      tags:
-        - Customer
-      description: ""
-      summary: Updates the birthday of a customer
-      parameters:
-        - name: value
-          in: query
-          description: The birthday of a customer
-          required: true
-          type: string
-          format: date-time
-      responses:
-        204:
-          description: No content
-        400:
-          description: Bad request
-          schema:
-            $ref: "#/definitions/ErrorResponse"
-        404:
-          description: Not found
-          schema:
-            $ref: "#/definitions/ErrorResponse"
-        500:
-          description: Internal server error
-          schema:
-            $ref: "#/definitions/ErrorResponse"
-  /customers/{customerId}/visa_expiry_date:
-    x-swagger-router-controller: customers
-    parameters:
-      - $ref: '#/parameters/customerId'
-    put:
-      operationId: updateCustomerVisaExpiryDate
-      tags:
-        - Customer
-      description: ""
-      summary: Updates the visa expiry date of a customer
-      consumes:
-        - application/x-www-form-urlencoded
-      parameters:
-        - name: value
-          in: formData
-          description: The visa expiry date of a customer
-          required: true
-          type: string
-          format: date
-      responses:
-        200:
-          description: OK
-        400:
-          description: Bad request
-          schema:
-            $ref: "#/definitions/ErrorResponse"
-        404:
-          description: Not found
-          schema:
-            $ref: "#/definitions/ErrorResponse"
-        500:
-          description: Internal server error
-          schema:
-            $ref: "#/definitions/ErrorResponse"
-  /customers/{customerId}/{property}:
-    x-swagger-router-controller: customers
-    parameters:
-      - $ref: '#/parameters/customerId'
-    put:
-      operationId: updateCustomerProperty
-      tags:
-        - Customer
-      description: ""
-      summary: Updates a customer property
-      parameters:
-        - name: property
-          in: path
-          description: The property name
-          required: true
-          type: string
-          enum:
-            - email
-            - surname
-            - given_name
-            - nickname
-            - real_name
-            - gender
-            - mobile
-            - qq
-            - wechat
-            - au_address
-            - foreign_address
-        - name: value
-          in: query
-          description: The property value
-          required: true
-          type: string
-      responses:
-        200:
-          description: OK
-        400:
-          description: Bad request
-          schema:
-            $ref: "#/definitions/ErrorResponse"
-        404:
-          description: Not found
-          schema:
-            $ref: "#/definitions/ErrorResponse"
-        500:
-          description: Internal server error
-          schema:
-            $ref: "#/definitions/ErrorResponse"
+  # /customers/{customerId}/archived:
+  #   x-swagger-router-controller: customers
+  #   parameters:
+  #     - $ref: '#/parameters/customerId'
+  #   put:
+  #     operationId: updateCustomerArchived
+  #     tags:
+  #       - Customer
+  #     description: ""
+  #     summary: Updates the archived status of a customer
+  #     parameters:
+  #       - name: value
+  #         in: query
+  #         description: Set to true to archive / to false to unarchive
+  #         required: true
+  #         type: boolean
+  #     responses:
+  #       200:
+  #         description: OK
+  #       400:
+  #         description: Bad request
+  #         schema:
+  #           $ref: "#/definitions/ErrorResponse"
+  #       404:
+  #         description: Not found
+  #         schema:
+  #           $ref: "#/definitions/ErrorResponse"
+  #       500:
+  #         description: Internal server error
+  #         schema:
+  #           $ref: "#/definitions/ErrorResponse"
+  # /customers/{customerId}/birthday:
+  #   x-swagger-router-controller: customers
+  #   parameters:
+  #     - $ref: '#/parameters/customerId'
+  #   put:
+  #     operationId: updateCustomerBirthday
+  #     tags:
+  #       - Customer
+  #     description: ""
+  #     summary: Updates the birthday of a customer
+  #     parameters:
+  #       - name: value
+  #         in: query
+  #         description: The birthday of a customer
+  #         required: true
+  #         type: string
+  #         format: date-time
+  #     responses:
+  #       204:
+  #         description: No content
+  #       400:
+  #         description: Bad request
+  #         schema:
+  #           $ref: "#/definitions/ErrorResponse"
+  #       404:
+  #         description: Not found
+  #         schema:
+  #           $ref: "#/definitions/ErrorResponse"
+  #       500:
+  #         description: Internal server error
+  #         schema:
+  #           $ref: "#/definitions/ErrorResponse"
+  # /customers/{customerId}/visa_expiry_date:
+  #   x-swagger-router-controller: customers
+  #   parameters:
+  #     - $ref: '#/parameters/customerId'
+  #   put:
+  #     operationId: updateCustomerVisaExpiryDate
+  #     tags:
+  #       - Customer
+  #     description: ""
+  #     summary: Updates the visa expiry date of a customer
+  #     parameters:
+  #       - name: value
+  #         in: query
+  #         description: The visa expiry date of a customer
+  #         required: true
+  #         type: string
+  #         format: date-time
+  #     responses:
+  #       200:
+  #         description: OK
+  #       400:
+  #         description: Bad request
+  #         schema:
+  #           $ref: "#/definitions/ErrorResponse"
+  #       404:
+  #         description: Not found
+  #         schema:
+  #           $ref: "#/definitions/ErrorResponse"
+  #       500:
+  #         description: Internal server error
+  #         schema:
+  #           $ref: "#/definitions/ErrorResponse"
+  # /customers/{customerId}/{property}:
+  #   x-swagger-router-controller: customers
+  #   parameters:
+  #     - $ref: '#/parameters/customerId'
+  #   put:
+  #     operationId: updateCustomerProperty
+  #     tags:
+  #       - Customer
+  #     description: ""
+  #     summary: Updates a customer property
+  #     parameters:
+  #       - name: property
+  #         in: path
+  #         description: The property name
+  #         required: true
+  #         type: string
+  #         enum:
+  #           - email
+  #           - surname
+  #           - given_name
+  #           - nickname
+  #           - real_name
+  #           - gender
+  #           - mobile
+  #           - qq
+  #           - wechat
+  #           - au_address
+  #           - foreign_address
+  #       - name: value
+  #         in: query
+  #         description: The property value
+  #         required: true
+  #         type: string
+  #     responses:
+  #       200:
+  #         description: OK
+  #       400:
+  #         description: Bad request
+  #         schema:
+  #           $ref: "#/definitions/ErrorResponse"
+  #       404:
+  #         description: Not found
+  #         schema:
+  #           $ref: "#/definitions/ErrorResponse"
+  #       500:
+  #         description: Internal server error
+  #         schema:
+  #           $ref: "#/definitions/ErrorResponse"
 
   ##### Checklist #####
   /customers/{customerId}/checklists:
@@ -465,9 +529,13 @@ paths:
         201:
           description: Created
           schema:
-            $ref: "#/definitions/Checklist"
+            $ref: "#/definitions/ExpandedChecklist"
         400:
           description: Bad request
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        409:
+          description: Conflict
           schema:
             $ref: "#/definitions/ErrorResponse"
         500:
@@ -485,7 +553,7 @@ paths:
           schema:
             type: array
             items:
-              $ref: "#/definitions/Checklist"
+              $ref: "#/definitions/ExpandedChecklist"
         500:
           description: Internal server error
           schema:
@@ -502,7 +570,7 @@ paths:
         200:
           description: OK
           schema:
-            $ref: "#/definitions/Checklist"
+            $ref: "#/definitions/ExpandedChecklist"
         404:
           description: Not found
           schema:
@@ -524,8 +592,42 @@ paths:
           schema:
             $ref: "#/definitions/Checklist"
       responses:
-        204:
-          description: No content
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/ExpandedChecklist"
+        400:
+          description: Bad request
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        404:
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        500:
+          description: Internal server error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+    patch:
+      operationId: partialUpdateChecklist
+      tags:
+        - Checklist
+      description: ""
+      summary: Partially update a checklist
+      consumes:
+        - application/merge-patch+json
+      parameters:
+        - name: checklistUpdatePatch
+          in: body
+          description: The ChecklistUpdatePatch object
+          required: true
+          schema:
+            $ref: "#/definitions/ChecklistUpdatePatch"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/ExpandedChecklist"
         400:
           description: Bad request
           schema:
@@ -554,44 +656,6 @@ paths:
           description: Internal server error
           schema:
             $ref: "#/definitions/ErrorResponse"
-  /checklists/{checklistId}/{property}:
-    parameters:
-      - $ref: '#/parameters/checklistId'
-    put:
-      tags:
-        - Checklist
-      description: ""
-      summary: Updates a checklist property
-      consumes:
-        - application/x-www-form-urlencoded
-      parameters:
-        - name: property
-          in: path
-          description: The property name
-          required: true
-          type: string
-          enum:
-            - name
-        - name: value
-          in: formData
-          description: The property value
-          required: true
-          type: string
-      responses:
-        204:
-          description: No content
-        400:
-          description: Bad request
-          schema:
-            $ref: "#/definitions/ErrorResponse"
-        404:
-          description: Not found
-          schema:
-            $ref: "#/definitions/ErrorResponse"
-        500:
-          description: Internal server error
-          schema:
-            $ref: "#/definitions/ErrorResponse"
   /checklists/{checklistId}/checklist-items:
     parameters:
       - $ref: '#/parameters/checklistId'
@@ -611,11 +675,19 @@ paths:
         201:
           description: Created
           schema:
-            $ref: "#/definitions/ChecklistItem"
+            $ref: "#/definitions/ExpandedChecklistItem"
         400:
           description: Bad request
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        409:
+          description: Conflict
+          schema:
+            $ref: "#/definitions/ErrorResponse"
         500:
           description: Internal server error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
     get:
       tags:
         - Checklist
@@ -627,9 +699,11 @@ paths:
           schema:
             type: array
             items:
-              $ref: "#/definitions/ChecklistItem"
+              $ref: "#/definitions/ExpandedChecklistItem"
         500:
           description: Internal server error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
   /checklist-items/{checklistItemId}:
     parameters:
       - $ref: '#/parameters/checklistItemId'
@@ -642,14 +716,15 @@ paths:
         200:
           description: OK
           schema:
-            type: object
-            properties:
-              data:
-                $ref: "#/definitions/ChecklistItem"
+            $ref: "#/definitions/ExpandedChecklistItem"
         404:
           description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse"
         500:
           description: Internal server error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
     put:
       tags:
         - Checklist
@@ -663,14 +738,54 @@ paths:
           schema:
             $ref: "#/definitions/ChecklistItem"
       responses:
-        204:
-          description: No content
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/ExpandedChecklistItem"
         400:
           description: Bad request
+          schema:
+            $ref: "#/definitions/ErrorResponse"
         404:
           description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse"
         500:
           description: Internal server error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+    patch:
+      operationId: partialUpdateChecklistItem
+      tags:
+        - Checklist
+      description: ""
+      summary: Partially update a checklist item
+      consumes:
+        - application/merge-patch+json
+      parameters:
+        - name: checklistItemUpdatePatch
+          in: body
+          description: The ChecklistItemUpdatePatch object
+          required: true
+          schema:
+            $ref: "#/definitions/ChecklistItemUpdatePatch"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/ExpandedChecklistItem"
+        400:
+          description: Bad request
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        404:
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        500:
+          description: Internal server error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
     delete:
       tags:
         - Checklist
@@ -681,65 +796,12 @@ paths:
           description: No content
         404:
           description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse"
         500:
           description: Internal server error
-  /checklist-items/{checklistItemId}/checked:
-    parameters:
-      - $ref: '#/parameters/checklistItemId'
-    put:
-      tags:
-        - Checklist
-      description: ""
-      summary: Updates the checked status of a checklist item
-      consumes:
-        - application/x-www-form-urlencoded
-      parameters:
-        - name: value
-          in: formData
-          description: Set to true to check / to false to uncheck
-          required: true
-          type: boolean
-      responses:
-        204:
-          description: No content
-        400:
-          description: Bad request
-        404:
-          description: Not found
-        500:
-          description: Internal server error
-  /checklist-items/{checklistItemId}/{property}:
-    parameters:
-      - $ref: '#/parameters/checklistItemId'
-    put:
-      tags:
-        - Checklist
-      description: ""
-      summary: Updates a checklist item property
-      consumes:
-        - application/x-www-form-urlencoded
-      parameters:
-        - name: property
-          in: path
-          description: The property name
-          required: true
-          type: string
-          enum:
-            - text
-        - name: value
-          in: formData
-          description: The property value
-          required: true
-          type: string
-      responses:
-        204:
-          description: No content
-        400:
-          description: Bad request
-        404:
-          description: Not found
-        500:
-          description: Internal server error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
 
   ##### Sticky Note #####
   /customers/{customerId}/sticky-notes:
@@ -870,7 +932,124 @@ paths:
 #                                 Definitions                                  #
 ################################################################################
 definitions:
+  # Workflow status
+  NewWorkflowStatus:
+    type: object
+    required:
+      - name
+      - color
+    properties:
+      name:
+        type: string
+      color:
+        $ref: "#/definitions/Color"
+      pos:
+        $ref: "#/definitions/SortablePosition"
+    additionalProperties: false
+  WorkflowStatus:
+    type: object
+    allOf:
+      - $ref: "#/definitions/NewWorkflowStatus"
+      - required:
+        - _id
+        - pos
+        properties:
+          _id:
+            $ref: "#/definitions/ObjectId"
+          pos:
+            $ref: "#/definitions/SortablePosition"
+  ExpandedWorkflowStatus:
+    type: object
+    allOf:
+      - $ref: "#/definitions/WorkflowStatus"
+      - required:
+        - created_at
+        - updated_at
+        properties:
+          created_at:
+            type: string
+            format: date-time
+          updated_at:
+            type: string
+            format: date-time
+  WorkflowStatusUpdatePatch:
+    type: object
+    properties:
+      name:
+        type: string
+      color:
+        $ref: "#/definitions/Color"
+      pos:
+        $ref: "#/definitions/SortablePosition"
+    additionalProperties: false
+
+  # Customer
+  NewCustomer:
+    type: object
+    required:
+      - surname
+      - given_name
+      - gender
+      - status
+    properties:
+      email:
+        type: string
+        format: email
+      surname:
+        type: string
+      given_name:
+        type: string
+      nickname:
+        type: string
+      real_name:
+        type: string
+      gender:
+        $ref: "#/definitions/Gender"
+      birthday:
+        type: string
+        format: date-time
+      mobile:
+        type: string
+      qq:
+        type: string
+      wechat:
+        type: string
+      au_address:
+        type: string
+      foreign_address:
+        type: string
+      visa_expiry_date:
+        type: string
+        format: date-time
+      status:
+        $ref: "#/definitions/ObjectId"
+      list_pos:
+        $ref: "#/definitions/SortablePosition"
+      workflow_pos:
+        $ref: "#/definitions/SortablePosition"
+      is_archived:
+        type: boolean
+        default: false
+    additionalProperties: false
   Customer:
+    type: object
+    allOf:
+      - $ref: "#/definitions/NewCustomer"
+      - required:
+          - _id
+          - list_pos
+          - workflow_pos
+          - is_archived
+        properties:
+          _id:
+            $ref: "#/definitions/ObjectId"
+          list_pos:
+            $ref: "#/definitions/SortablePosition"
+          workflow_pos:
+            $ref: "#/definitions/SortablePosition"
+          is_archived:
+            type: boolean
+  ExpandedCustomer:
     type: object
     required:
       - _id
@@ -898,10 +1077,7 @@ definitions:
       real_name:
         type: string
       gender:
-        type: string
-        enum:
-          - male
-          - female
+        $ref: "#/definitions/Gender"
       birthday:
         type: string
         format: date-time
@@ -917,20 +1093,19 @@ definitions:
         type: string
       visa_expiry_date:
         type: string
-        format: date
+        format: date-time
       status:
-        $ref: "#/definitions/WorkflowStatus"
+        $ref: "#/definitions/ExpandedWorkflowStatus"
       list_pos:
         $ref: "#/definitions/SortablePosition"
       workflow_pos:
         $ref: "#/definitions/SortablePosition"
       is_archived:
         type: boolean
-        default: false
       checklists:
         type: array
         items:
-          $ref: "#/definitions/Checklist"
+          $ref: "#/definitions/ExpandedChecklist"
       sticky_notes:
         type: array
         items:
@@ -941,13 +1116,8 @@ definitions:
       updated_at:
         type: string
         format: date-time
-  NewCustomer:
+  CustomerUpdatePatch:
     type: object
-    required:
-      - surname
-      - given_name
-      - gender
-      - status
     properties:
       email:
         type: string
@@ -961,10 +1131,7 @@ definitions:
       real_name:
         type: string
       gender:
-        type: string
-        enum:
-          - male
-          - female
+        $ref: "#/definitions/Gender"
       birthday:
         type: string
         format: date-time
@@ -980,7 +1147,7 @@ definitions:
         type: string
       visa_expiry_date:
         type: string
-        format: date
+        format: date-time
       status:
         $ref: "#/definitions/ObjectId"
       list_pos:
@@ -989,68 +1156,9 @@ definitions:
         $ref: "#/definitions/SortablePosition"
       is_archived:
         type: boolean
-        default: false
-  WorkflowStatus:
-    type: object
-    required:
-      - _id
-      - name
-      - color
-      - pos
-    properties:
-      _id:
-        $ref: "#/definitions/ObjectId"
-      name:
-        type: string
-      color:
-        type: string
-        enum:
-          - red
-          - orange
-          - yellow
-          - green
-          - blue
-          - purple
-          - black
-      pos:
-        $ref: "#/definitions/SortablePosition"
-  NewWorkflowStatus:
-    type: object
-    required:
-      - name
-      - color
-    properties:
-      name:
-        type: string
-      color:
-        type: string
-        enum:
-          - red
-          - orange
-          - yellow
-          - green
-          - blue
-          - purple
-          - black
-      pos:
-        $ref: "#/definitions/SortablePosition"
-  Checklist:
-    type: object
-    allOf:
-      - $ref: "#/definitions/NewChecklist"
-      - required:
-        - _id
-        - pos
-        - items
-        properties:
-          _id:
-            $ref: "#/definitions/ObjectId"
-          pos:
-            $ref: "#/definitions/SortablePosition"
-          items:
-            type: array
-            items:
-              $ref: "#/definitions/ChecklistItem"
+    additionalProperties: false
+
+  # Checklist
   NewChecklist:
     type: object
     required:
@@ -1058,6 +1166,69 @@ definitions:
     properties:
       name:
         type: string
+      pos:
+        $ref: "#/definitions/SortablePosition"
+    additionalProperties: false
+  Checklist:
+    type: object
+    allOf:
+      - $ref: "#/definitions/NewChecklist"
+      - required:
+          - _id
+          - pos
+        properties:
+          _id:
+            $ref: "#/definitions/ObjectId"
+          pos:
+            $ref: "#/definitions/SortablePosition"
+  ExpandedChecklist:
+    type: object
+    required:
+      - _id
+      - name
+      - pos
+      - created_at
+      - updated_at
+    properties:
+      _id:
+        $ref: "#/definitions/ObjectId"
+      name:
+        type: string
+      pos:
+        $ref: "#/definitions/SortablePosition"
+      items:
+        type: array
+        items:
+          $ref: "#/definitions/ExpandedChecklistItem"
+      created_at:
+        type: string
+        format: date-time
+      updated_at:
+        type: string
+        format: date-time
+  ChecklistUpdatePatch:
+    type: object
+    properties:
+      name:
+        type: string
+      pos:
+        $ref: "#/definitions/SortablePosition"
+    additionalProperties: false
+
+  # Checklist item
+  NewChecklistItem:
+    type: object
+    required:
+      - text
+    properties:
+      text:
+        type: string
+      checked:
+        type: boolean
+        default: false
+      pos:
+        $ref: "#/definitions/SortablePosition"
+    additionalProperties: false
   ChecklistItem:
     type: object
     allOf:
@@ -1071,16 +1242,34 @@ definitions:
             $ref: "#/definitions/ObjectId"
           checked:
             type: boolean
-            default: false
           pos:
             $ref: "#/definitions/SortablePosition"
-  NewChecklistItem:
+  ExpandedChecklistItem:
     type: object
-    required:
-      - text
+    allOf:
+      - $ref: "#/definitions/ChecklistItem"
+      - required:
+        - created_at
+        - updated_at
+        properties:
+          created_at:
+            type: string
+            format: date-time
+          updated_at:
+            type: string
+            format: date-time
+  ChecklistItemUpdatePatch:
+    type: object
     properties:
       text:
         type: string
+      checked:
+        type: boolean
+      pos:
+        $ref: "#/definitions/SortablePosition"
+    additionalProperties: false
+
+  # Sticky note
   StickyNote:
     type: object
     allOf:
@@ -1110,7 +1299,24 @@ definitions:
     format: int32
     minimum: 0
 
-  # responses
+  # Enums
+  Color:
+    type: string
+    enum:
+      - red
+      - orange
+      - yellow
+      - green
+      - blue
+      - purple
+      - black
+  Gender:
+    type: string
+    enum:
+      - male
+      - female
+
+  # Responses
   ErrorResponse:
     type: object
     required:

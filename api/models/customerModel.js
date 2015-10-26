@@ -27,6 +27,12 @@ var CustomerSchema = new Schema({
     }
 });
 
+if (!CustomerSchema.options.toObject) CustomerSchema.options.toObject = {};
+CustomerSchema.options.toObject.transform = function (doc, ret, options) {
+    // remove the __v of every document before returning the result
+    delete ret.__v;
+}
+
 // static methods
 CustomerSchema.statics.getById = function(id, callback) {
     this.findById(id)

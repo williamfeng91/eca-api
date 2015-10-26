@@ -3,6 +3,8 @@
 var mongoose = require('mongoose');
 var util = require('util');
 var boom = require('boom');
+var jsonmergepatch = require('json-merge-patch');
+
 var models = require('../models');
 var Customer = models.Customer;
 var WorkflowStatus = models.WorkflowStatus;
@@ -15,10 +17,11 @@ module.exports = {
     getCustomers: getCustomers,
     getCustomerById: getCustomerById,
     updateCustomer: updateCustomer,
-    updateCustomerArchived: updateCustomerArchived,
-    updateCustomerBirthday: updateCustomerBirthday,
-    updateCustomerVisaExpiryDate: updateCustomerVisaExpiryDate,
-    updateCustomerProperty: updateCustomerProperty,
+    partialUpdateCustomer: partialUpdateCustomer,
+    // updateCustomerArchived: updateCustomerArchived,
+    // updateCustomerBirthday: updateCustomerBirthday,
+    // updateCustomerVisaExpiryDate: updateCustomerVisaExpiryDate,
+    // updateCustomerProperty: updateCustomerProperty,
     deleteCustomer: deleteCustomer
 };
 
@@ -134,6 +137,26 @@ function updateCustomer(req, res, next) {
             customer.is_archived = req.body.is_archived;
             customer.list_pos = req.body.list_pos;
             customer.workflow_pos = req.body.workflow_pos;
+            customer.save(function(err, updatedCustomer) {
+                if (err) {
+                    return next(new boom.badImplementation());
+                } else {
+                    res.json(updatedCustomer);
+                }
+            });
+        }
+    });
+}
+
+function partialUpdateCustomer(req, res, next) {
+    var id = req.swagger.params.customerId.value;
+    Customer.getById(id, function(err, customer) {
+        if (err) {
+            return next(new boom.badImplementation());
+        } else if (!customer) {
+            return next(new boom.notFound(CUSTOMER_NOT_FOUND));
+        } else {
+            customer = jsonmergepatch.apply(customer, req.body);
             customer.save(function(err, updatedCustomer) {
                 if (err) {
                     return next(new boom.badImplementation());

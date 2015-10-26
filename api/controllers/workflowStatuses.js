@@ -3,6 +3,8 @@
 var mongoose = require('mongoose');
 var util = require('util');
 var boom = require('boom');
+var jsonmergepatch = require('json-merge-patch');
+
 var models = require('../models');
 var WorkflowStatus = models.WorkflowStatus;
 
@@ -12,6 +14,7 @@ module.exports = {
     createWorkflowStatus: createWorkflowStatus,
     getWorkflowStatusById: getWorkflowStatusById,
     updateWorkflowStatus: updateWorkflowStatus,
+    partialUpdateWorkflowStatus: partialUpdateWorkflowStatus,
     deleteWorkflowStatus: deleteWorkflowStatus
 };
 
@@ -30,7 +33,7 @@ function createWorkflowStatus(req, res, next) {
             }
             return next(new boom.badImplementation());
         } else {
-            res.status(201).json(newWorkflowStatus);
+            res.status(201).json(newWorkflowStatus.toObject());
         }
     });
 }
@@ -48,7 +51,7 @@ function getWorkflowStatusById(req, res, next) {
         } else if (!workflowStatus) {
             return next(new boom.notFound(WORKFLOW_STATUS_NOT_FOUND))
         } else {
-            res.json(workflowStatus);
+            res.json(workflowStatus.toObject());
         }
     });
 }
@@ -76,7 +79,27 @@ function updateWorkflowStatus(req, res, next) {
                 if (err) {
                     return next(new boom.badImplementation());
                 } else {
-                    res.json(updatedWorkflowStatus);
+                    res.json(updatedWorkflowStatus.toObject());
+                }
+            });
+        }
+    });
+}
+
+function partialUpdateWorkflowStatus(req, res, next) {
+    var id = req.swagger.params.workflowStatusId.value;
+    WorkflowStatus.getById(_id, function(err, workflowStatus) {
+        if (err) {
+            return next(new boom.badImplementation());
+        } else if (!workflowStatus) {
+            return next(new boom.notFound(WORKFLOW_STATUS_NOT_FOUND))
+        } else {
+            workflowStatus = jsonmergepatch.apply(workflowStatus, req.body);
+            workflowStatus.save(function(err, updatedWorkflowStatus) {
+                if (err) {
+                    return next(new boom.badImplementation());
+                } else {
+                    res.json(updatedWorkflowStatus.toObject());
                 }
             });
         }
