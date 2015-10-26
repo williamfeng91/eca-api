@@ -1,5 +1,6 @@
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema;
+var StickyNote = require('./stickyNoteModel');
 
 var CustomerSchema = new Schema({
     email: { type: String, required: true },
@@ -18,7 +19,8 @@ var CustomerSchema = new Schema({
     status: { type: Schema.Types.ObjectId, ref: 'WorkflowStatus', required: true },
     list_pos: { type: Number, required: true, unique: true },
     workflow_pos: { type: Number, required: true, unique: true },
-    is_archived: { type: Boolean, default: false }
+    is_archived: { type: Boolean, default: false },
+    sticky_notes: [StickyNote.schema]
 },
 {
     timestamps: {

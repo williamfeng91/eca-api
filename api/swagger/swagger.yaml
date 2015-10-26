@@ -854,9 +854,11 @@ paths:
 
   ##### Sticky Note #####
   /customers/{customerId}/sticky-notes:
+    x-swagger-router-controller: stickyNotes
     parameters:
       - $ref: '#/parameters/customerId'
     post:
+      operationId: createStickyNote
       tags:
         - Sticky Note
       description: ""
@@ -872,7 +874,7 @@ paths:
         201:
           description: Created
           schema:
-            $ref: "#/definitions/StickyNote"
+            $ref: "#/definitions/ExpandedStickyNote"
         400:
           description: Bad request
           schema:
@@ -886,6 +888,7 @@ paths:
           schema:
             $ref: "#/definitions/ErrorResponse"
     get:
+      operationId: getStickyNotes
       tags:
         - Sticky Note
       description: ""
@@ -896,15 +899,17 @@ paths:
           schema:
             type: array
             items:
-              $ref: "#/definitions/StickyNote"
+              $ref: "#/definitions/ExpandedStickyNote"
         500:
           description: Internal server error
           schema:
             $ref: "#/definitions/ErrorResponse"
   /sticky-notes/{stickyNoteId}:
+    x-swagger-router-controller: stickyNotes
     parameters:
       - $ref: '#/parameters/stickyNoteId'
     get:
+      operationId: getStickyNoteById
       tags:
         - Sticky Note
       description: ""
@@ -913,7 +918,7 @@ paths:
         200:
           description: OK
           schema:
-            $ref: "#/definitions/StickyNote"
+            $ref: "#/definitions/ExpandedStickyNote"
         404:
           description: Not found
           schema:
@@ -923,6 +928,7 @@ paths:
           schema:
             $ref: "#/definitions/ErrorResponse"
     put:
+      operationId: updateStickyNote
       tags:
         - Sticky Note
       description: ""
@@ -935,8 +941,46 @@ paths:
           schema:
             $ref: "#/definitions/StickyNote"
       responses:
-        204:
-          description: No content
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/ExpandedStickyNote"
+        400:
+          description: Bad request
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        404:
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        409:
+          description: Conflict
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        500:
+          description: Internal server error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+    patch:
+      operationId: partialUpdateStickyNote
+      tags:
+        - Sticky Note
+      description: ""
+      summary: Partially update a sticky note
+      consumes:
+        - application/merge-patch+json
+      parameters:
+        - name: stickyNoteUpdatePatch
+          in: body
+          description: The StickyNoteUpdatePatch object
+          required: true
+          schema:
+            $ref: "#/definitions/StickyNoteUpdatePatch"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/ExpandedStickyNote"
         400:
           description: Bad request
           schema:
@@ -954,6 +998,7 @@ paths:
           schema:
             $ref: "#/definitions/ErrorResponse"
     delete:
+      operationId: deleteStickyNote
       tags:
         - Sticky Note
       description: ""
@@ -1315,6 +1360,16 @@ definitions:
     additionalProperties: false
 
   # Sticky note
+  NewStickyNote:
+    type: object
+    required:
+      - text
+    properties:
+      text:
+        type: string
+      pos:
+        $ref: "#/definitions/SortablePosition"
+    # additionalProperties: false
   StickyNote:
     type: object
     allOf:
@@ -1327,13 +1382,28 @@ definitions:
             $ref: "#/definitions/ObjectId"
           pos:
             $ref: "#/definitions/SortablePosition"
-  NewStickyNote:
+  ExpandedStickyNote:
     type: object
-    required:
-      - text
+    allOf:
+      - $ref: "#/definitions/StickyNote"
+      - required:
+        - created_at
+        - updated_at
+        properties:
+          created_at:
+            type: string
+            format: date-time
+          updated_at:
+            type: string
+            format: date-time
+  StickyNoteUpdatePatch:
+    type: object
     properties:
       text:
         type: string
+      pos:
+        $ref: "#/definitions/SortablePosition"
+    additionalProperties: false
 
   # Internal types
   ObjectId:

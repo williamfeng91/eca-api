@@ -168,6 +168,23 @@ describe('controllers', function() {
           });
       });
 
+      it('should return 404 if id is invalid', function(done) {
+
+        request(server)
+          .get('/api/v0/workflow-statuses/000')
+          .set('Accept', 'application/json')
+          .expect('Content-Type', /json/)
+          .expect(404)
+          .end(function(err, res) {
+            should.not.exist(err);
+
+            res.body.statusCode.should.eql(404);
+            res.body.error.should.eql('Not Found');
+
+            done();
+          });
+      });
+
       it('should return 404 if not found', function(done) {
 
         request(server)
@@ -260,6 +277,29 @@ describe('controllers', function() {
           });
       });
 
+      it('should return 404 if id is invalid', function(done) {
+
+        request(server)
+          .put('/api/v0/workflow-statuses/000')
+          .set('Accept', 'application/json')
+          .send({
+            _id: '000000000000000000000000',
+            name: existingStatus.name,
+            color: existingStatus.color,
+            pos: existingStatus.pos,
+          })
+          .expect('Content-Type', /json/)
+          .expect(404)
+          .end(function(err, res) {
+            should.not.exist(err);
+
+            res.body.statusCode.should.eql(404);
+            res.body.error.should.eql('Not Found');
+
+            done();
+          });
+      });
+
       it('should return 404 if not found', function(done) {
 
         request(server)
@@ -309,6 +349,184 @@ describe('controllers', function() {
 
             res.body.statusCode.should.eql(409);
             res.body.error.should.eql('Conflict');
+
+            done();
+          });
+      });
+    });
+
+    describe('PATCH /workflow-statuses/{workflowStatusId}', function() {
+
+      it('should return 200 if successfully updated', function(done) {
+
+        var updateStatusPatch = {
+          name: 'updatedName',
+          color: 'black',
+        };
+
+        request(server)
+          .patch('/api/v0/workflow-statuses/' + existingStatus._id)
+          .set('Accept', 'application/merge-patch+json')
+          .send(updateStatusPatch)
+          .expect('Content-Type', /json/)
+          .expect(200)
+          .end(function(err, res) {
+            should.not.exist(err);
+
+            res.body._id.should.eql(existingStatus._id.toString());
+            res.body.name.should.eql(updateStatusPatch.name);
+            res.body.color.should.eql(updateStatusPatch.color);
+            res.body.pos.should.eql(existingStatus.pos);
+            new Date(res.body.created_at).should
+              .eql(existingStatus.created_at);
+            new Date(res.body.updated_at).should.be
+              .greaterThan(existingStatus.updated_at);
+
+            done();
+          });
+      });
+
+      it('should return 400 if a parameter has invalid value', function(done) {
+
+        request(server)
+          .patch('/api/v0/workflow-statuses/' + existingStatus._id)
+          .set('Accept', 'application/merge-patch+json')
+          .send({
+            name: 'testStatus',
+            color: 'not_a_color',
+            pos: 88888,
+          })
+          .expect('Content-Type', /json/)
+          .expect(400)
+          .end(function(err, res) {
+            should.not.exist(err);
+
+            res.body.statusCode.should.eql(400);
+            res.body.error.should.eql('Bad Request');
+
+            done();
+          });
+      });
+
+      it('should return 404 if id is invalid', function(done) {
+
+        request(server)
+          .patch('/api/v0/workflow-statuses/000')
+          .set('Accept', 'application/merge-patch+json')
+          .send({
+            name: existingStatus.name,
+            color: existingStatus.color,
+            pos: existingStatus.pos,
+          })
+          .expect('Content-Type', /json/)
+          .expect(404)
+          .end(function(err, res) {
+            should.not.exist(err);
+
+            res.body.statusCode.should.eql(404);
+            res.body.error.should.eql('Not Found');
+
+            done();
+          });
+      });
+
+      it('should return 404 if not found', function(done) {
+
+        request(server)
+          .patch('/api/v0/workflow-statuses/000000000000000000000000')
+          .set('Accept', 'application/merge-patch+json')
+          .send({
+            name: existingStatus.name,
+            color: existingStatus.color,
+            pos: existingStatus.pos,
+          })
+          .expect('Content-Type', /json/)
+          .expect(404)
+          .end(function(err, res) {
+            should.not.exist(err);
+
+            res.body.statusCode.should.eql(404);
+            res.body.error.should.eql('Not Found');
+
+            done();
+          });
+      });
+
+      it('should return 409 if a parameter has conflicting value',
+      function(done) {
+
+        // insert another workflow status to product conflict
+        mongoose.connection.collection('workflowstatuses').insert({
+          name: 'conflictStatus',
+          color: 'orange',
+          pos: 88888
+        });
+
+        request(server)
+          .patch('/api/v0/workflow-statuses/' + existingStatus._id)
+          .set('Accept', 'application/merge-patch+json')
+          .send({
+            name: existingStatus.name,
+            color: existingStatus.color,
+            pos: 88888,
+          })
+          .expect('Content-Type', /json/)
+          .expect(409)
+          .end(function(err, res) {
+            should.not.exist(err);
+
+            res.body.statusCode.should.eql(409);
+            res.body.error.should.eql('Conflict');
+
+            done();
+          });
+      });
+    });
+
+    describe('DELETE /workflow-statuses/{workflowStatusId}', function() {
+
+      it('should return 204 if successful', function(done) {
+
+        request(server)
+          .delete('/api/v0/workflow-statuses/' + existingStatus._id)
+          .set('Accept', 'application/json')
+          .expect(204)
+          .end(function(err, res) {
+            should.not.exist(err);
+
+            done();
+          });
+      });
+
+      it('should return 404 if id is invalid', function(done) {
+
+        request(server)
+          .delete('/api/v0/workflow-statuses/000')
+          .set('Accept', 'application/json')
+          .expect('Content-Type', /json/)
+          .expect(404)
+          .end(function(err, res) {
+            should.not.exist(err);
+
+            res.body.statusCode.should.eql(404);
+            res.body.error.should.eql('Not Found');
+
+            done();
+          });
+      });
+
+      it('should return 404 if not found', function(done) {
+
+        request(server)
+          .delete('/api/v0/workflow-statuses/000000000000000000000000')
+          .set('Accept', 'application/json')
+          .expect('Content-Type', /json/)
+          .expect(404)
+          .end(function(err, res) {
+            should.not.exist(err);
+
+            res.body.statusCode.should.eql(404);
+            res.body.error.should.eql('Not Found');
 
             done();
           });

@@ -30,7 +30,8 @@ function createCustomer(req, res, next) {
     try {
         var _statusId = mongoose.Types.ObjectId(statusId);
     } catch (err) {
-        return next(new boom.badRequest('Value \'status\' is invalid'));
+        return next(
+            new boom.badRequest('Value \'status\' is invalid'));
     }
     WorkflowStatus.getById(_statusId, function(err, status) {
         if (err) {
@@ -66,7 +67,7 @@ function createCustomer(req, res, next) {
                     }
                     return next(new boom.badImplementation());
                 } else {
-                    res.status(201).json(newCustomer);
+                    res.status(201).json(newCustomer.toObject());
                 }
             });
         }
@@ -81,7 +82,7 @@ function getCustomers(req, res, next) {
             // return an empty array if no data found
             res.json([]);
         } else {
-            res.json(customers);
+            res.json(customers.toObject());
         }
     });
 }
@@ -99,7 +100,7 @@ function getCustomerById(req, res, next) {
         } else if (!customer) {
             return next(new boom.notFound(CUSTOMER_NOT_FOUND))
         } else {
-            res.json(customer);
+            res.json(customer.toObject());
         }
     });
 }
@@ -141,7 +142,7 @@ function updateCustomer(req, res, next) {
                 if (err) {
                     return next(new boom.badImplementation());
                 } else {
-                    res.json(updatedCustomer);
+                    res.json(updatedCustomer.toObject());
                 }
             });
         }
@@ -150,7 +151,12 @@ function updateCustomer(req, res, next) {
 
 function partialUpdateCustomer(req, res, next) {
     var id = req.swagger.params.customerId.value;
-    Customer.getById(id, function(err, customer) {
+    try {
+        var _id = mongoose.Types.ObjectId(id);
+    } catch (err) {
+        return next(new boom.notFound(CUSTOMER_NOT_FOUND));
+    }
+    Customer.getById(_id, function(err, customer) {
         if (err) {
             return next(new boom.badImplementation());
         } else if (!customer) {
@@ -161,7 +167,7 @@ function partialUpdateCustomer(req, res, next) {
                 if (err) {
                     return next(new boom.badImplementation());
                 } else {
-                    res.json(updatedCustomer);
+                    res.json(updatedCustomer.toObject());
                 }
             });
         }
@@ -181,7 +187,7 @@ function updateCustomerArchived(req, res, next) {
                 if (err) {
                     return next(new boom.badImplementation());
                 } else {
-                    res.json(customer);
+                    res.json(customer.toObject());
                 }
             });
         }
@@ -201,7 +207,7 @@ function updateCustomerBirthday(req, res, next) {
                 if (err) {
                     return next(new boom.badImplementation());
                 } else {
-                    res.json(customer);
+                    res.json(customer.toObject());
                 }
             });
         }
@@ -221,7 +227,7 @@ function updateCustomerVisaExpiryDate(req, res, next) {
                 if (err) {
                     return next(new boom.badImplementation());
                 } else {
-                    res.json(customer);
+                    res.json(customer.toObject());
                 }
             });
         }
@@ -236,12 +242,13 @@ function updateCustomerProperty(req, res, next) {
         } else if (!customer) {
             return next(new boom.notFound(CUSTOMER_NOT_FOUND));
         } else {
-            customer[req.swagger.params.property.value] = req.query.value;
+            customer[req.swagger.params.property.value]
+                = req.query.value;
             customer.save(function(err, customer) {
                 if (err) {
                     return next(new boom.badImplementation());
                 } else {
-                    res.json(customer);
+                    res.json(customer.toObject());
                 }
             });
         }

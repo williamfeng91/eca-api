@@ -11,6 +11,7 @@ var WorkflowStatus = models.WorkflowStatus;
 
 var DUPLICATE_FOUND = 'Found duplicate';
 var WORKFLOW_STATUS_NOT_FOUND = 'The workflow status was not found';
+var WRONG_ID = 'Wrong workflow status ID';
 
 module.exports = {
   createWorkflowStatus: createWorkflowStatus,
@@ -79,7 +80,7 @@ function updateWorkflowStatus(req, res, next) {
   try {
     var _id = mongoose.Types.ObjectId(id);
     if (req.body._id != id) {
-      return next(new boom.badRequest('Wrong workflow status ID'));
+      return next(new boom.badRequest(WRONG_ID));
     }
   } catch (err) {
     return next(new boom.notFound(WORKFLOW_STATUS_NOT_FOUND));
@@ -112,6 +113,11 @@ function updateWorkflowStatus(req, res, next) {
 
 function partialUpdateWorkflowStatus(req, res, next) {
   var id = req.swagger.params.workflowStatusId.value;
+  try {
+    var _id = mongoose.Types.ObjectId(id);
+  } catch (err) {
+    return next(new boom.notFound(WORKFLOW_STATUS_NOT_FOUND));
+  }
   WorkflowStatus.getById(_id, function(err, workflowStatus) {
     if (err) {
       logger.error(err);
@@ -122,6 +128,11 @@ function partialUpdateWorkflowStatus(req, res, next) {
       workflowStatus = jsonmergepatch.apply(workflowStatus, req.body);
       workflowStatus.save(function(err, updatedWorkflowStatus) {
         if (err) {
+          logger.error(err);
+          if (err.code === 11000) {
+            // duplicate key error
+            return next(new boom.conflict(DUPLICATE_FOUND));
+          }
           return next(new boom.badImplementation());
         } else {
           res.json(updatedWorkflowStatus.toObject());

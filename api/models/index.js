@@ -1,4 +1,4 @@
-var models = ['customer', 'workflowStatus'];
+var models = ['customer', 'workflowStatus', 'stickyNote'];
 
 for (var i in models) {
     exports[capitalizeFirstLetter(models[i])] = require('./' + models[i] + 'Model');
