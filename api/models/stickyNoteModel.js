@@ -4,7 +4,7 @@ var Schema = mongoose.Schema;
 
 var StickyNoteSchema = new Schema({
   text: { type: String, required: true },
-  pos: { type: Number, required: true, unique: true }
+  pos: { type: Number, required: true, unique: true, sparse: true }
 },
 {
   timestamps: {

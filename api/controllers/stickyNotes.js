@@ -42,6 +42,13 @@ function createStickyNote(req, res, next) {
     } else if (!customer) {
       return next(new boom.notFound(CUSTOMER_NOT_FOUND))
     } else {
+      // look for duplicate sticky note
+      for (var i in customer.sticky_notes) {
+        if (customer.sticky_notes[i].pos === stickyNote.pos) {
+          // found duplicate
+          return next(new boom.conflict(DUPLICATE_FOUND));
+        }
+      }
       customer.sticky_notes.push(stickyNote);
       customer.save(function(err, customer) {
         if (err) {
@@ -109,6 +116,7 @@ function updateStickyNote(req, res, next) {
   } catch (err) {
     return next(new boom.notFound(STICKY_NOTE_NOT_FOUND));
   }
+  var updatedStickyNote = req.body;
   Customer.findOne({'sticky_notes._id': _stickyNoteId},
   function(err, customer) {
     if (err) {
@@ -117,10 +125,18 @@ function updateStickyNote(req, res, next) {
     } else if (!customer) {
       return next(new boom.notFound(STICKY_NOTE_NOT_FOUND));
     } else {
+      // look for duplicate sticky note
+      for (var i in customer.sticky_notes) {
+        if (customer.sticky_notes[i]._id !== _stickyNoteId
+          && customer.sticky_notes[i].pos === updatedStickyNote.pos) {
+          // found duplicate
+          return next(new boom.conflict(DUPLICATE_FOUND));
+        }
+      }
       var stickyNote = customer.sticky_notes.id(_stickyNoteId);
-      stickyNote.text = req.body.text;
-      stickyNote.pos = req.body.pos;
-      customer.save(function(err, stickyNote) {
+      stickyNote.text = updatedStickyNote.text;
+      stickyNote.pos = updatedStickyNote.pos;
+      customer.save(function(err, customer) {
         if (err) {
           logger.error(err);
           if (err.code === 11000) {
@@ -144,6 +160,7 @@ function partialUpdateStickyNote(req, res, next) {
   } catch (err) {
     return next(new boom.notFound(STICKY_NOTE_NOT_FOUND));
   }
+  var updatePatch = req.body;
   Customer.findOne({'sticky_notes._id': _stickyNoteId},
   function(err, customer) {
     if (err) {
@@ -152,9 +169,19 @@ function partialUpdateStickyNote(req, res, next) {
     } else if (!customer) {
       return next(new boom.notFound(STICKY_NOTE_NOT_FOUND))
     } else {
+      if (updatePatch.pos) {
+        // look for duplicate sticky note
+        for (var i in customer.sticky_notes) {
+          if (customer.sticky_notes[i]._id !== _stickyNoteId
+            && customer.sticky_notes[i].pos === updatePatch.pos) {
+            // found duplicate
+            return next(new boom.conflict(DUPLICATE_FOUND));
+          }
+        }
+      }
       var stickyNote = customer.sticky_notes.id(_stickyNoteId);
-      stickyNote = jsonmergepatch.apply(stickyNote, req.body);
-      customer.save(function(err, stickyNote) {
+      stickyNote = jsonmergepatch.apply(stickyNote, updatePatch);
+      customer.save(function(err, customer) {
         if (err) {
           logger.error(err);
           if (err.code === 11000) {

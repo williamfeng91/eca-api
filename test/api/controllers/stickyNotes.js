@@ -1,59 +1,83 @@
 var should = require('should');
 var request = require('supertest');
 var mongoose = require('mongoose');
-var jsonmergepatch = require('json-merge-patch');
 
 var server = require('../../../app');
 var models = require('../../../api/models');
-var WorkflowStatus = models.WorkflowStatus;
+var Customer = models.Customer;
+var StickyNote = models.StickyNote;
 
 describe('controllers', function() {
 
-  describe('workflowStatuses', function() {
+  describe('stickyNotes', function() {
 
-    var existingStatus = new WorkflowStatus({
-      name: 'existingStatus',
-      color: 'red',
+    var existingCustomer = new Customer({
+      email: 'a@b.com',
+      surname: 'Smith',
+      given_name: 'John',
+      gender: 'male',
+      status: mongoose.Types.ObjectId(),
+      list_pos: 99999,
+      workflow_pos: 99999,
+      is_archived: false,
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
+
+    var existingStickyNote = new StickyNote({
+      text: 'existingNote',
       pos: 99999,
       created_at: new Date(),
       updated_at: new Date(),
     });
 
-    beforeEach(function(done) {
+    before(function(done) {
       // empty the collection before test
-      WorkflowStatus.remove(function(err) {
-        var newStatus = new WorkflowStatus(existingStatus);
+      Customer.remove({}, function(err) {
         if (err) throw err;
-        // insert one workflow status to be used by test cases
-        newStatus.save(function(err, workflowStatus) {
+        // insert one customer to be used by test cases
+        existingCustomer.save(function(err, customer) {
+          if (err) throw err;
+          if (!customer) throw 'Customer not found';
+          done();
+        });
+      });
+    });
+
+    beforeEach(function(done) {
+      Customer.findById(existingCustomer._id, function(err, customer) {
+        if (err) throw err;
+        if (!customer) throw 'Customer not found';
+        // empty the array and insert one sticky note to be used by test cases
+        customer.sticky_notes = [];
+        customer.sticky_notes.push(existingStickyNote);
+        customer.save(function(err) {
           if (err) throw err;
           done();
         });
       });
     });
 
-    describe('POST /workflow-statuses', function() {
+    describe('POST /customers/{customerId}/sticky-notes', function() {
 
       it('should return 201 and the resource if successfully created',
       function(done) {
 
-        var newStatus = {
-          name: 'new status',
-          color: 'green',
+        var newStickyNote = {
+          text: 'new note',
         };
 
         request(server)
-          .post('/api/v0/workflow-statuses')
+          .post('/api/v0/customers/' + existingCustomer._id + '/sticky-notes')
           .set('Accept', 'application/json')
-          .send(newStatus)
+          .send(newStickyNote)
           .expect('Content-Type', /json/)
           .expect(201)
           .end(function(err, res) {
             should.not.exist(err);
 
             res.body.should.have.property('_id');
-            res.body.name.should.eql(newStatus.name);
-            res.body.color.should.eql(newStatus.color);
+            res.body.text.should.eql(newStickyNote.text);
             res.body.should.have.property('pos');
             res.body.should.have.property('created_at');
             res.body.should.have.property('updated_at');
@@ -66,7 +90,7 @@ describe('controllers', function() {
       it('should return 400 if a parameter is missing', function(done) {
 
         request(server)
-          .post('/api/v0/workflow-statuses')
+          .post('/api/v0/customers/' + existingCustomer._id + '/sticky-notes')
           .set('Accept', 'application/json')
           .send({})
           .expect('Content-Type', /json/)
@@ -84,11 +108,11 @@ describe('controllers', function() {
       it('should return 400 if a parameter has invalid value', function(done) {
 
         request(server)
-          .post('/api/v0/workflow-statuses')
+          .post('/api/v0/customers/' + existingCustomer._id + '/sticky-notes')
           .set('Accept', 'application/json')
           .send({
-            name: 'new status',
-            color: 'not_a_color',
+            text: 'new note',
+            pos: 'not_a_number',
           })
           .expect('Content-Type', /json/)
           .expect(400)
@@ -102,16 +126,55 @@ describe('controllers', function() {
           });
       });
 
+      it('should return 404 if customer id is invalid', function(done) {
+
+        request(server)
+          .post('/api/v0/customers/000/sticky-notes')
+          .set('Accept', 'application/json')
+          .send({
+            text: 'new note',
+          })
+          .expect('Content-Type', /json/)
+          .expect(404)
+          .end(function(err, res) {
+            should.not.exist(err);
+
+            res.body.statusCode.should.eql(404);
+            res.body.error.should.eql('Not Found');
+
+            done();
+          });
+      });
+
+      it('should return 404 if customer not found', function(done) {
+
+        request(server)
+          .post('/api/v0/customers/000000000000000000000000/sticky-notes')
+          .set('Accept', 'application/json')
+          .send({
+            text: 'new note',
+          })
+          .expect('Content-Type', /json/)
+          .expect(404)
+          .end(function(err, res) {
+            should.not.exist(err);
+
+            res.body.statusCode.should.eql(404);
+            res.body.error.should.eql('Not Found');
+
+            done();
+          });
+      });
+
       it('should return 409 if a parameter has conflicting value',
       function(done) {
 
         request(server)
-          .post('/api/v0/workflow-statuses')
+          .post('/api/v0/customers/' + existingCustomer._id + '/sticky-notes')
           .set('Accept', 'application/json')
           .send({
-            name: existingStatus.name,
-            color: existingStatus.color,
-            pos: existingStatus.pos,
+            text: 'conflicting note',
+            pos: existingStickyNote.pos,
           })
           .expect('Content-Type', /json/)
           .expect(409)
@@ -126,12 +189,12 @@ describe('controllers', function() {
       });
     });
 
-    describe('GET /workflow-statuses', function() {
+    describe('GET /customers/{customerId}/sticky-notes', function() {
 
       it('should return 200 if successful', function(done) {
 
         request(server)
-          .get('/api/v0/workflow-statuses')
+          .get('/api/v0/customers/' + existingCustomer._id + '/sticky-notes')
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(200)
@@ -139,33 +202,32 @@ describe('controllers', function() {
             should.not.exist(err);
 
             res.body.should.be.instanceOf(Array).and.have.lengthOf(1);
-            res.body[0]._id.should.be.eql(existingStatus._id.toString());
+            res.body[0]._id.should.be.eql(existingStickyNote._id.toString());
 
             done();
           });
       });
     });
 
-    describe('GET /workflow-statuses/{workflowStatusId}', function() {
+    describe('GET /sticky-notes/{stickyNoteId}', function() {
 
       it('should return 200 if successful', function(done) {
 
         request(server)
-          .get('/api/v0/workflow-statuses/' + existingStatus._id)
+          .get('/api/v0/sticky-notes/' + existingStickyNote._id)
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(200)
           .end(function(err, res) {
             should.not.exist(err);
 
-            res.body._id.should.eql(existingStatus._id.toString());
-            res.body.name.should.eql(existingStatus.name);
-            res.body.color.should.eql(existingStatus.color);
-            res.body.pos.should.eql(existingStatus.pos);
+            res.body._id.should.eql(existingStickyNote._id.toString());
+            res.body.text.should.eql(existingStickyNote.text);
+            res.body.pos.should.eql(existingStickyNote.pos);
             new Date(res.body.created_at).should
-              .eql(existingStatus.created_at);
+              .eql(existingStickyNote.created_at);
             new Date(res.body.updated_at).should
-              .eql(existingStatus.updated_at);
+              .eql(existingStickyNote.updated_at);
 
             done();
           });
@@ -174,7 +236,7 @@ describe('controllers', function() {
       it('should return 404 if id in path is invalid', function(done) {
 
         request(server)
-          .get('/api/v0/workflow-statuses/000')
+          .get('/api/v0/sticky-notes/000')
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(404)
@@ -191,7 +253,7 @@ describe('controllers', function() {
       it('should return 404 if not found', function(done) {
 
         request(server)
-          .get('/api/v0/workflow-statuses/000000000000000000000000')
+          .get('/api/v0/sticky-notes/000000000000000000000000')
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(404)
@@ -206,34 +268,32 @@ describe('controllers', function() {
       });
     });
 
-    describe('PUT /workflow-statuses/{workflowStatusId}', function() {
+    describe('PUT /sticky-notes/{stickyNoteId}', function() {
 
       it('should return 200 if successfully updated', function(done) {
 
-        var updatedStatus = {
-          _id: existingStatus._id.toString(),
-          name: 'updatedName',
-          color: 'black',
+        var updatedStickyNote = {
+          _id: existingStickyNote._id.toString(),
+          text: 'updated note',
           pos: 88888,
         };
 
         request(server)
-          .put('/api/v0/workflow-statuses/' + existingStatus._id)
+          .put('/api/v0/sticky-notes/' + existingStickyNote._id)
           .set('Accept', 'application/json')
-          .send(updatedStatus)
+          .send(updatedStickyNote)
           .expect('Content-Type', /json/)
           .expect(200)
           .end(function(err, res) {
             should.not.exist(err);
 
-            res.body._id.should.eql(existingStatus._id.toString());
-            res.body.name.should.eql(updatedStatus.name);
-            res.body.color.should.eql(updatedStatus.color);
-            res.body.pos.should.eql(updatedStatus.pos);
+            res.body._id.should.eql(existingStickyNote._id.toString());
+            res.body.text.should.eql(updatedStickyNote.text);
+            res.body.pos.should.eql(updatedStickyNote.pos);
             new Date(res.body.created_at).should
-              .eql(existingStatus.created_at);
+              .eql(existingStickyNote.created_at);
             new Date(res.body.updated_at).should.be
-              .greaterThan(existingStatus.updated_at);
+              .greaterThan(existingStickyNote.updated_at);
 
             done();
           });
@@ -242,7 +302,7 @@ describe('controllers', function() {
       it('should return 400 if a parameter is missing', function(done) {
 
         request(server)
-          .put('/api/v0/workflow-statuses/' + existingStatus._id)
+          .put('/api/v0/sticky-notes/' + existingStickyNote._id)
           .set('Accept', 'application/json')
           .send({})
           .expect('Content-Type', /json/)
@@ -260,13 +320,12 @@ describe('controllers', function() {
       it('should return 400 if a parameter has invalid value', function(done) {
 
         request(server)
-          .put('/api/v0/workflow-statuses/' + existingStatus._id)
+          .put('/api/v0/sticky-notes/' + existingStickyNote._id)
           .set('Accept', 'application/json')
           .send({
-            _id: existingStatus._id.toString(),
-            name: 'testStatus',
-            color: 'not_a_color',
-            pos: 88888,
+            _id: existingStickyNote._id.toString(),
+            text: 'updated note',
+            pos: 'not_a_number',
           })
           .expect('Content-Type', /json/)
           .expect(400)
@@ -283,13 +342,12 @@ describe('controllers', function() {
       it('should return 404 if id in path is invalid', function(done) {
 
         request(server)
-          .put('/api/v0/workflow-statuses/000')
+          .put('/api/v0/sticky-notes/000')
           .set('Accept', 'application/json')
           .send({
             _id: '000000000000000000000000',
-            name: existingStatus.name,
-            color: existingStatus.color,
-            pos: existingStatus.pos,
+            text: existingStickyNote.text,
+            pos: existingStickyNote.pos,
           })
           .expect('Content-Type', /json/)
           .expect(404)
@@ -306,13 +364,12 @@ describe('controllers', function() {
       it('should return 404 if not found', function(done) {
 
         request(server)
-          .put('/api/v0/workflow-statuses/000000000000000000000000')
+          .put('/api/v0/sticky-notes/000000000000000000000000')
           .set('Accept', 'application/json')
           .send({
             _id: '000000000000000000000000',
-            name: existingStatus.name,
-            color: existingStatus.color,
-            pos: existingStatus.pos,
+            text: existingStickyNote.text,
+            pos: existingStickyNote.pos,
           })
           .expect('Content-Type', /json/)
           .expect(404)
@@ -329,61 +386,65 @@ describe('controllers', function() {
       it('should return 409 if a parameter has conflicting value',
       function(done) {
 
-        // insert another workflow status to produce conflict
-        mongoose.connection.collection('workflowstatuses').insert({
-          name: 'conflictStatus',
-          color: 'orange',
-          pos: 88888
-        });
-
-        request(server)
-          .put('/api/v0/workflow-statuses/' + existingStatus._id)
-          .set('Accept', 'application/json')
-          .send({
-            _id: existingStatus._id.toString(),
-            name: existingStatus.name,
-            color: existingStatus.color,
+        // insert another sticky note to produce conflict
+        Customer.findById(existingCustomer._id, function(err, customer) {
+          if (err) throw err;
+          if (!customer) throw 'Customer not found';
+          var newStickyNote = new StickyNote({
+            text: 'conflicting note',
             pos: 88888,
-          })
-          .expect('Content-Type', /json/)
-          .expect(409)
-          .end(function(err, res) {
-            should.not.exist(err);
-
-            res.body.statusCode.should.eql(409);
-            res.body.error.should.eql('Conflict');
-
-            done();
           });
+          customer.sticky_notes.push(newStickyNote);
+          customer.save(function(err, customer) {
+            if (err) throw err;
+
+            request(server)
+              .put('/api/v0/sticky-notes/' + existingStickyNote._id)
+              .set('Accept', 'application/json')
+              .send({
+                _id: existingStickyNote._id.toString(),
+                text: existingStickyNote.text,
+                pos: 88888,
+              })
+              .expect('Content-Type', /json/)
+              .expect(409)
+              .end(function(err, res) {
+                should.not.exist(err);
+
+                res.body.statusCode.should.eql(409);
+                res.body.error.should.eql('Conflict');
+
+                done();
+              });
+          });
+        });
       });
     });
 
-    describe('PATCH /workflow-statuses/{workflowStatusId}', function() {
+    describe('PATCH /sticky-notes/{stickyNoteId}', function() {
 
       it('should return 200 if successfully updated', function(done) {
 
-        var updateStatusPatch = {
-          name: 'updatedName',
-          color: 'black',
+        var updatePatch = {
+          text: 'updated note',
         };
 
         request(server)
-          .patch('/api/v0/workflow-statuses/' + existingStatus._id)
+          .patch('/api/v0/sticky-notes/' + existingStickyNote._id)
           .set('Accept', 'application/merge-patch+json')
-          .send(updateStatusPatch)
+          .send(updatePatch)
           .expect('Content-Type', /json/)
           .expect(200)
           .end(function(err, res) {
             should.not.exist(err);
 
-            res.body._id.should.eql(existingStatus._id.toString());
-            res.body.name.should.eql(updateStatusPatch.name);
-            res.body.color.should.eql(updateStatusPatch.color);
-            res.body.pos.should.eql(existingStatus.pos);
+            res.body._id.should.eql(existingStickyNote._id.toString());
+            res.body.text.should.eql(updatePatch.text);
+            res.body.pos.should.eql(existingStickyNote.pos);
             new Date(res.body.created_at).should
-              .eql(existingStatus.created_at);
+              .eql(existingStickyNote.created_at);
             new Date(res.body.updated_at).should.be
-              .greaterThan(existingStatus.updated_at);
+              .greaterThan(existingStickyNote.updated_at);
 
             done();
           });
@@ -392,12 +453,11 @@ describe('controllers', function() {
       it('should return 400 if a parameter has invalid value', function(done) {
 
         request(server)
-          .patch('/api/v0/workflow-statuses/' + existingStatus._id)
+          .patch('/api/v0/sticky-notes/' + existingStickyNote._id)
           .set('Accept', 'application/merge-patch+json')
           .send({
-            name: 'testStatus',
-            color: 'not_a_color',
-            pos: 88888,
+            text: 'invalid patch',
+            pos: 'not_a_number',
           })
           .expect('Content-Type', /json/)
           .expect(400)
@@ -414,12 +474,10 @@ describe('controllers', function() {
       it('should return 404 if id in path is invalid', function(done) {
 
         request(server)
-          .patch('/api/v0/workflow-statuses/000')
+          .patch('/api/v0/sticky-notes/000')
           .set('Accept', 'application/merge-patch+json')
           .send({
-            name: existingStatus.name,
-            color: existingStatus.color,
-            pos: existingStatus.pos,
+            text: existingStickyNote.text,
           })
           .expect('Content-Type', /json/)
           .expect(404)
@@ -436,12 +494,10 @@ describe('controllers', function() {
       it('should return 404 if not found', function(done) {
 
         request(server)
-          .patch('/api/v0/workflow-statuses/000000000000000000000000')
+          .patch('/api/v0/sticky-notes/000000000000000000000000')
           .set('Accept', 'application/merge-patch+json')
           .send({
-            name: existingStatus.name,
-            color: existingStatus.color,
-            pos: existingStatus.pos,
+            text: existingStickyNote.text,
           })
           .expect('Content-Type', /json/)
           .expect(404)
@@ -458,40 +514,46 @@ describe('controllers', function() {
       it('should return 409 if a parameter has conflicting value',
       function(done) {
 
-        // insert another workflow status to produce conflict
-        mongoose.connection.collection('workflowstatuses').insert({
-          name: 'conflictStatus',
-          color: 'orange',
-          pos: 88888
-        });
-
-        request(server)
-          .patch('/api/v0/workflow-statuses/' + existingStatus._id)
-          .set('Accept', 'application/merge-patch+json')
-          .send({
-            name: existingStatus.name,
-            color: existingStatus.color,
+        // insert another sticky note to produce conflict
+        Customer.findById(existingCustomer._id, function(err, customer) {
+          if (err) throw err;
+          if (!customer) throw 'Customer not found';
+          var newStickyNote = new StickyNote({
+            text: 'conflicting note',
             pos: 88888,
-          })
-          .expect('Content-Type', /json/)
-          .expect(409)
-          .end(function(err, res) {
-            should.not.exist(err);
-
-            res.body.statusCode.should.eql(409);
-            res.body.error.should.eql('Conflict');
-
-            done();
           });
+          customer.sticky_notes.push(newStickyNote);
+          customer.save(function(err, customer) {
+            if (err) throw err;
+
+            request(server)
+              .patch('/api/v0/sticky-notes/' + existingStickyNote._id)
+              .set('Accept', 'application/json')
+              .send({
+                text: existingStickyNote.text,
+                pos: 88888,
+              })
+              .expect('Content-Type', /json/)
+              .expect(409)
+              .end(function(err, res) {
+                should.not.exist(err);
+
+                res.body.statusCode.should.eql(409);
+                res.body.error.should.eql('Conflict');
+
+                done();
+              });
+          });
+        });
       });
     });
 
-    describe('DELETE /workflow-statuses/{workflowStatusId}', function() {
+    describe('DELETE /sticky-notes/{stickyNoteId}', function() {
 
       it('should return 204 if successful', function(done) {
 
         request(server)
-          .delete('/api/v0/workflow-statuses/' + existingStatus._id)
+          .delete('/api/v0/sticky-notes/' + existingStickyNote._id)
           .set('Accept', 'application/json')
           .expect(204)
           .end(function(err, res) {
@@ -504,7 +566,7 @@ describe('controllers', function() {
       it('should return 404 if id in path is invalid', function(done) {
 
         request(server)
-          .delete('/api/v0/workflow-statuses/000')
+          .delete('/api/v0/sticky-notes/000')
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(404)
@@ -521,7 +583,7 @@ describe('controllers', function() {
       it('should return 404 if not found', function(done) {
 
         request(server)
-          .delete('/api/v0/workflow-statuses/000000000000000000000000')
+          .delete('/api/v0/sticky-notes/000000000000000000000000')
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(404)
