@@ -1120,7 +1120,7 @@ definitions:
       is_archived:
         type: boolean
         default: false
-    additionalProperties: false
+    # additionalProperties: false
   Customer:
     type: object
     allOf:
@@ -1258,7 +1258,7 @@ definitions:
         type: string
       pos:
         $ref: "#/definitions/SortablePosition"
-    additionalProperties: false
+    # additionalProperties: false
   Checklist:
     type: object
     allOf:
@@ -1318,7 +1318,7 @@ definitions:
         default: false
       pos:
         $ref: "#/definitions/SortablePosition"
-    additionalProperties: false
+    # additionalProperties: false
   ChecklistItem:
     type: object
     allOf:

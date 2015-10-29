@@ -5,6 +5,7 @@ var logger = require('log4js').getLogger('StickyNote Controller');
 var util = require('util');
 var boom = require('boom');
 var jsonmergepatch = require('json-merge-patch');
+var constants = require('../helpers/constants');
 
 var models = require('../models');
 var Customer = models.Customer;
@@ -216,6 +217,7 @@ function deleteStickyNote(req, res, next) {
       customer.sticky_notes.id(_stickyNoteId).remove();
       customer.save(function(err) {
         if (err) {
+          logger.error(err);
           return next(new boom.badImplementation());
         } else {
           res.status(204).send('');

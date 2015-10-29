@@ -5,6 +5,7 @@ var logger = require('log4js').getLogger('WorkflowStatus Controller');
 var util = require('util');
 var boom = require('boom');
 var jsonmergepatch = require('json-merge-patch');
+var constants = require('../helpers/constants');
 
 var models = require('../models');
 var WorkflowStatus = models.WorkflowStatus;
@@ -19,26 +20,36 @@ module.exports = {
   getWorkflowStatusById: getWorkflowStatusById,
   updateWorkflowStatus: updateWorkflowStatus,
   partialUpdateWorkflowStatus: partialUpdateWorkflowStatus,
-  deleteWorkflowStatus: deleteWorkflowStatus
+  deleteWorkflowStatus: deleteWorkflowStatus,
 };
 
 function createWorkflowStatus(req, res, next) {
-  var workflowStatus = new WorkflowStatus({
-    name: req.body.name,
-    color: req.body.color,
-    pos: req.body.pos || 0
-  });
-  workflowStatus.save(function(err, newWorkflowStatus) {
+  // Find workflow status with maximum pos value in the collection
+  WorkflowStatus.getMaxPos(function(err, workflowStatusWithMaxPos) {
+    var newPos = constants.POS_START_VAL;
     if (err) {
       logger.error(err);
-      if (err.code === 11000) {
-          // duplicate key error
-          return next(new boom.conflict(DUPLICATE_FOUND));
-      }
       return next(new boom.badImplementation());
-    } else {
-      res.status(201).json(newWorkflowStatus.toObject());
+    } else if (workflowStatusWithMaxPos) {
+      newPos = workflowStatusWithMaxPos.pos + constants.POS_AUTO_INCREMENT;
     }
+    // Create and save
+    var workflowStatus = new WorkflowStatus({
+      name: req.body.name,
+      color: req.body.color,
+      pos: (req.body.pos != null) ? req.body.pos : newPos,
+    });
+    workflowStatus.save(function(err, newWorkflowStatus) {
+      if (err) {
+        logger.error(err);
+        if (err.code === 11000) {
+            // duplicate key error
+            return next(new boom.conflict(DUPLICATE_FOUND));
+        }
+        return next(new boom.badImplementation());
+      }
+      return res.status(201).json(newWorkflowStatus.toObject());
+    });
   });
 }
 
@@ -49,10 +60,9 @@ function getWorkflowStatuses(req, res, next) {
       return next(new boom.badImplementation());
     } else if (!workflowStatuses) {
       // return an empty array if no data found
-      res.json([]);
-    } else {
-      res.json(workflowStatuses);
+      return res.json([]);
     }
+    return res.json(workflowStatuses);
   });
 }
 
@@ -69,9 +79,8 @@ function getWorkflowStatusById(req, res, next) {
       return next(new boom.badImplementation());
     } else if (!workflowStatus) {
       return next(new boom.notFound(WORKFLOW_STATUS_NOT_FOUND))
-    } else {
-      res.json(workflowStatus.toObject());
     }
+    return res.json(workflowStatus.toObject());
   });
 }
 
@@ -85,29 +94,28 @@ function updateWorkflowStatus(req, res, next) {
   } catch (err) {
     return next(new boom.notFound(WORKFLOW_STATUS_NOT_FOUND));
   }
+  // Find and update
   WorkflowStatus.getById(_id, function(err, workflowStatus) {
     if (err) {
       logger.error(err);
       return next(new boom.badImplementation());
     } else if (!workflowStatus) {
       return next(new boom.notFound(WORKFLOW_STATUS_NOT_FOUND));
-    } else {
-      workflowStatus.name = req.body.name;
-      workflowStatus.color = req.body.color;
-      workflowStatus.pos = req.body.pos;
-      workflowStatus.save(function(err, updatedWorkflowStatus) {
-        if (err) {
-          logger.error(err);
-          if (err.code === 11000) {
-            // duplicate key error
-            return next(new boom.conflict(DUPLICATE_FOUND));
-          }
-          return next(new boom.badImplementation());
-        } else {
-          res.json(updatedWorkflowStatus.toObject());
-        }
-      });
     }
+    workflowStatus.name = req.body.name;
+    workflowStatus.color = req.body.color;
+    workflowStatus.pos = req.body.pos;
+    workflowStatus.save(function(err, updatedWorkflowStatus) {
+      if (err) {
+        logger.error(err);
+        if (err.code === 11000) {
+          // duplicate key error
+          return next(new boom.conflict(DUPLICATE_FOUND));
+        }
+        return next(new boom.badImplementation());
+      }
+      return res.json(updatedWorkflowStatus.toObject());
+    });
   });
 }
 
@@ -118,27 +126,26 @@ function partialUpdateWorkflowStatus(req, res, next) {
   } catch (err) {
     return next(new boom.notFound(WORKFLOW_STATUS_NOT_FOUND));
   }
+  // Find and update
   WorkflowStatus.getById(_id, function(err, workflowStatus) {
     if (err) {
       logger.error(err);
       return next(new boom.badImplementation());
     } else if (!workflowStatus) {
       return next(new boom.notFound(WORKFLOW_STATUS_NOT_FOUND))
-    } else {
-      workflowStatus = jsonmergepatch.apply(workflowStatus, req.body);
-      workflowStatus.save(function(err, updatedWorkflowStatus) {
-        if (err) {
-          logger.error(err);
-          if (err.code === 11000) {
-            // duplicate key error
-            return next(new boom.conflict(DUPLICATE_FOUND));
-          }
-          return next(new boom.badImplementation());
-        } else {
-          res.json(updatedWorkflowStatus.toObject());
-        }
-      });
     }
+    workflowStatus = jsonmergepatch.apply(workflowStatus, req.body);
+    workflowStatus.save(function(err, updatedWorkflowStatus) {
+      if (err) {
+        logger.error(err);
+        if (err.code === 11000) {
+          // duplicate key error
+          return next(new boom.conflict(DUPLICATE_FOUND));
+        }
+        return next(new boom.badImplementation());
+      }
+      return res.json(updatedWorkflowStatus.toObject());
+    });
   });
 }
 
@@ -149,20 +156,19 @@ function deleteWorkflowStatus(req, res, next) {
   } catch (err) {
     return next(new boom.notFound(WORKFLOW_STATUS_NOT_FOUND));
   }
+  // Find and delete
   WorkflowStatus.getById(_id, function(err, workflowStatus) {
     if (err) {
       logger.error(err);
       return next(new boom.badImplementation());
     } else if (!workflowStatus) {
       return next(new boom.notFound(WORKFLOW_STATUS_NOT_FOUND))
-    } else {
-      workflowStatus.remove(function(err) {
-        if (err) {
-          return next(new boom.badImplementation());
-        } else {
-          res.status(204).send('');
-        }
-      });
     }
+    workflowStatus.remove(function(err) {
+      if (err) {
+        return next(new boom.badImplementation());
+      }
+      return res.status(204).send('');
+    });
   });
 }

@@ -12,10 +12,10 @@
     "boom": "^2.9.0",
     "express": "^4.12.3",
     "file-stream-rotator": "0.0.6",
-    "httperrors": "^1.1.0",
     "json-merge-patch": "^0.2.3",
     "log4js": "^0.6.27",
     "mongoose": "^4.1.12",
+    "node-constants": "0.0.2",
     "swagger-express-mw": "^0.1.0",
     "swagger-tools": "^0.9.7"
   },

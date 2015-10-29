@@ -5,60 +5,100 @@ var constants = require('../../../api/helpers/constants');
 
 var server = require('../../../app');
 var models = require('../../../api/models');
+var Customer = models.Customer;
 var WorkflowStatus = models.WorkflowStatus;
 
 describe('controllers', function() {
 
-  describe('workflowStatuses', function() {
+  describe('customers', function() {
 
     var existingStatus = new WorkflowStatus({
       name: 'existingStatus',
       color: 'red',
       pos: 99999,
+    });
+
+    var existingCustomer = new Customer({
+      email: 'william.feng91@gmail.com',
+      surname: 'Feng',
+      given_name: 'Yunchao',
+      nickname: 'William',
+      real_name: '冯云超',
+      gender: 'male',
+      birthday: new Date(),
+      mobile: '0412345678',
+      qq: '88888888',
+      wechat: '88888888',
+      au_address: '1 George St, Sydney 2000',
+      foreign_address: '上海市',
+      visa_expiry_date: new Date(),
+      status: existingStatus._id,
+      list_pos: 99999,
+      workflow_pos: 99999,
+      is_archived: false,
       created_at: new Date(),
       updated_at: new Date(),
     });
 
-    beforeEach(function(done) {
+    before(function(done) {
       // empty the collection before test
       WorkflowStatus.remove(function(err) {
         if (err) throw err;
         // insert one workflow status to be used by test cases
-        var newStatus = new WorkflowStatus(existingStatus);
-        newStatus.save(function(err, workflowStatus) {
+        existingStatus.save(function(err, workflowStatus) {
+          if (err) throw err;
+          if (!workflowStatus) throw 'Workflow status not found';
+          done();
+        });
+      });
+    });
+
+    beforeEach(function(done) {
+      // empty the collection before test
+      Customer.remove(function(err) {
+        if (err) throw err;
+        // insert one customer to be used by test cases
+        var newCustomer = new Customer(existingCustomer);
+        newCustomer.save(function(err, customer) {
           if (err) throw err;
           done();
         });
       });
     });
 
-    describe('POST /workflow-statuses', function() {
+    describe('POST /customers', function() {
 
-      var newStatus = {
-        name: 'new status',
-        color: 'green',
+      var newCustomer = {
+        email: 'john.smith@hotmail.com',
+        surname: 'John',
+        given_name: 'John',
+        gender: 'male',
+        status: existingCustomer.status,
       };
 
       it('should return 201 when inserting into empty database',
       function(done) {
 
         // empty the collection
-        WorkflowStatus.remove(function(err) {
+        Customer.remove(function(err) {
           if (err) throw err;
 
           request(server)
-            .post('/api/v0/workflow-statuses')
+            .post('/api/v0/customers')
             .set('Accept', 'application/json')
-            .send(newStatus)
+            .send(newCustomer)
             .expect('Content-Type', /json/)
             .expect(201)
             .end(function(err, res) {
               should.not.exist(err);
 
               res.body.should.have.property('_id');
-              res.body.name.should.eql(newStatus.name);
-              res.body.color.should.eql(newStatus.color);
-              res.body.pos.should.eql(constants.POS_START_VAL);
+              res.body.email.should.eql(newCustomer.email);
+              res.body.surname.should.eql(newCustomer.surname);
+              res.body.given_name.should.eql(newCustomer.given_name);
+              res.body.gender.should.eql(newCustomer.gender);
+              res.body.list_pos.should.eql(constants.POS_START_VAL);
+              res.body.workflow_pos.should.eql(constants.POS_START_VAL);
               res.body.should.have.property('created_at');
               res.body.should.have.property('updated_at');
               res.body.created_at.should.eql(res.body.updated_at);
@@ -72,19 +112,23 @@ describe('controllers', function() {
       function(done) {
 
         request(server)
-          .post('/api/v0/workflow-statuses')
+          .post('/api/v0/customers')
           .set('Accept', 'application/json')
-          .send(newStatus)
+          .send(newCustomer)
           .expect('Content-Type', /json/)
           .expect(201)
           .end(function(err, res) {
             should.not.exist(err);
 
             res.body.should.have.property('_id');
-            res.body.name.should.eql(newStatus.name);
-            res.body.color.should.eql(newStatus.color);
-            res.body.pos.should.eql(
-              existingStatus.pos + constants.POS_AUTO_INCREMENT);
+            res.body.email.should.eql(newCustomer.email);
+            res.body.surname.should.eql(newCustomer.surname);
+            res.body.given_name.should.eql(newCustomer.given_name);
+            res.body.gender.should.eql(newCustomer.gender);
+            res.body.list_pos.should.eql(
+              existingCustomer.list_pos + constants.POS_AUTO_INCREMENT);
+            res.body.workflow_pos.should.eql(
+              existingCustomer.workflow_pos + constants.POS_AUTO_INCREMENT);
             res.body.should.have.property('created_at');
             res.body.should.have.property('updated_at');
             res.body.created_at.should.eql(res.body.updated_at);
@@ -96,7 +140,7 @@ describe('controllers', function() {
       it('should return 400 if a parameter is missing', function(done) {
 
         request(server)
-          .post('/api/v0/workflow-statuses')
+          .post('/api/v0/customers')
           .set('Accept', 'application/json')
           .send({})
           .expect('Content-Type', /json/)
@@ -114,11 +158,14 @@ describe('controllers', function() {
       it('should return 400 if a parameter has invalid value', function(done) {
 
         request(server)
-          .post('/api/v0/workflow-statuses')
+          .post('/api/v0/customers')
           .set('Accept', 'application/json')
           .send({
-            name: newStatus.name,
-            color: 'not_a_color',
+            email: 'not_an_email',
+            surname: newCustomer.surname,
+            given_name: newCustomer.given_name,
+            gender: 'not_a_gender',
+            status: newCustomer.status,
           })
           .expect('Content-Type', /json/)
           .expect(400)
@@ -136,12 +183,15 @@ describe('controllers', function() {
       function(done) {
 
         request(server)
-          .post('/api/v0/workflow-statuses')
+          .post('/api/v0/customers')
           .set('Accept', 'application/json')
           .send({
-            name: newStatus.name,
-            color: newStatus.color,
-            pos: existingStatus.pos,
+            email: newCustomer.email,
+            surname: newCustomer.surname,
+            given_name: newCustomer.given_name,
+            gender: newCustomer.gender,
+            status: newCustomer.status,
+            list_pos: existingCustomer.list_pos,
           })
           .expect('Content-Type', /json/)
           .expect(409)
@@ -156,12 +206,12 @@ describe('controllers', function() {
       });
     });
 
-    describe('GET /workflow-statuses', function() {
+    describe('GET /customers', function() {
 
       it('should return 200 and the resources', function(done) {
 
         request(server)
-          .get('/api/v0/workflow-statuses')
+          .get('/api/v0/customers')
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(200)
@@ -169,33 +219,36 @@ describe('controllers', function() {
             should.not.exist(err);
 
             res.body.should.be.instanceOf(Array).and.have.lengthOf(1);
-            res.body[0]._id.should.be.eql(existingStatus._id.toString());
+            res.body[0]._id.should.be.eql(existingCustomer._id.toString());
 
             done();
           });
       });
     });
 
-    describe('GET /workflow-statuses/{workflowStatusId}', function() {
+    describe('GET /customers/{customerId}', function() {
 
       it('should return 200 and the resource', function(done) {
 
         request(server)
-          .get('/api/v0/workflow-statuses/' + existingStatus._id)
+          .get('/api/v0/customers/' + existingCustomer._id)
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(200)
           .end(function(err, res) {
             should.not.exist(err);
 
-            res.body._id.should.eql(existingStatus._id.toString());
-            res.body.name.should.eql(existingStatus.name);
-            res.body.color.should.eql(existingStatus.color);
-            res.body.pos.should.eql(existingStatus.pos);
+            res.body._id.should.eql(existingCustomer._id.toString());
+            res.body.email.should.eql(existingCustomer.email);
+            res.body.surname.should.eql(existingCustomer.surname);
+            res.body.given_name.should.eql(existingCustomer.given_name);
+            res.body.gender.should.eql(existingCustomer.gender);
+            res.body.list_pos.should.eql(existingCustomer.list_pos);
+            res.body.workflow_pos.should.eql(existingCustomer.workflow_pos);
             new Date(res.body.created_at).should
-              .eql(existingStatus.created_at);
+              .eql(existingCustomer.created_at);
             new Date(res.body.updated_at).should
-              .eql(existingStatus.updated_at);
+              .eql(existingCustomer.updated_at);
 
             done();
           });
@@ -204,7 +257,7 @@ describe('controllers', function() {
       it('should return 404 if id in path is invalid', function(done) {
 
         request(server)
-          .get('/api/v0/workflow-statuses/000')
+          .get('/api/v0/customers/000')
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(404)
@@ -221,7 +274,7 @@ describe('controllers', function() {
       it('should return 404 if not found', function(done) {
 
         request(server)
-          .get('/api/v0/workflow-statuses/000000000000000000000000')
+          .get('/api/v0/customers/000000000000000000000000')
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(404)
@@ -236,34 +289,43 @@ describe('controllers', function() {
       });
     });
 
-    describe('PUT /workflow-statuses/{workflowStatusId}', function() {
+    describe('PUT /customers/{customerId}', function() {
 
-      var updatedStatus = {
-        _id: existingStatus._id.toString(),
-        name: 'updatedName',
-        color: 'black',
-        pos: 88888,
+      var updatedCustomer = {
+        _id: existingCustomer._id.toString(),
+        email: 'alice.bob@163.com',
+        surname: 'Bob',
+        given_name: 'Alice',
+        gender: 'female',
+        status: existingCustomer.status.toString(),
+        list_pos: 88888,
+        workflow_pos: 88888,
+        is_archived: false,
       };
 
       it('should return 200 and the updated resource', function(done) {
 
         request(server)
-          .put('/api/v0/workflow-statuses/' + existingStatus._id)
+          .put('/api/v0/customers/' + updatedCustomer._id)
           .set('Accept', 'application/json')
-          .send(updatedStatus)
+          .send(updatedCustomer)
           .expect('Content-Type', /json/)
           .expect(200)
           .end(function(err, res) {
             should.not.exist(err);
 
-            res.body._id.should.eql(existingStatus._id.toString());
-            res.body.name.should.eql(updatedStatus.name);
-            res.body.color.should.eql(updatedStatus.color);
-            res.body.pos.should.eql(updatedStatus.pos);
+            res.body._id.should.eql(existingCustomer._id.toString());
+            res.body.email.should.eql(updatedCustomer.email);
+            res.body.surname.should.eql(updatedCustomer.surname);
+            res.body.given_name.should.eql(updatedCustomer.given_name);
+            res.body.gender.should.eql(updatedCustomer.gender);
+            res.body.status.should.eql(updatedCustomer.status.toString());
+            res.body.list_pos.should.eql(updatedCustomer.list_pos);
+            res.body.workflow_pos.should.eql(updatedCustomer.workflow_pos);
             new Date(res.body.created_at).should
-              .eql(existingStatus.created_at);
+              .eql(existingCustomer.created_at);
             new Date(res.body.updated_at).should.be
-              .greaterThan(existingStatus.updated_at);
+              .greaterThan(existingCustomer.updated_at);
 
             done();
           });
@@ -272,7 +334,7 @@ describe('controllers', function() {
       it('should return 400 if a parameter is missing', function(done) {
 
         request(server)
-          .put('/api/v0/workflow-statuses/' + existingStatus._id)
+          .put('/api/v0/customers/' + existingCustomer._id)
           .set('Accept', 'application/json')
           .send({})
           .expect('Content-Type', /json/)
@@ -290,13 +352,18 @@ describe('controllers', function() {
       it('should return 400 if a parameter has invalid value', function(done) {
 
         request(server)
-          .put('/api/v0/workflow-statuses/' + existingStatus._id)
+          .put('/api/v0/customers/' + existingCustomer._id)
           .set('Accept', 'application/json')
           .send({
-            _id: updatedStatus._id,
-            name: updatedStatus.name,
-            color: 'not_a_color',
-            pos: updatedStatus.pos,
+            _id: updatedCustomer._id,
+            email: 'not_an_email',
+            surname: updatedCustomer.surname,
+            given_name: updatedCustomer.given_name,
+            gender: updatedCustomer.gender,
+            status: updatedCustomer.status,
+            list_pos: updatedCustomer.list_pos,
+            workflow_pos: updatedCustomer.workflow_pos,
+            is_archived: updatedCustomer.is_archived,
           })
           .expect('Content-Type', /json/)
           .expect(400)
@@ -313,9 +380,9 @@ describe('controllers', function() {
       it('should return 404 if id in path is invalid', function(done) {
 
         request(server)
-          .put('/api/v0/workflow-statuses/000')
+          .put('/api/v0/customers/000')
           .set('Accept', 'application/json')
-          .send(updatedStatus)
+          .send(updatedCustomer)
           .expect('Content-Type', /json/)
           .expect(404)
           .end(function(err, res) {
@@ -331,13 +398,18 @@ describe('controllers', function() {
       it('should return 404 if not found', function(done) {
 
         request(server)
-          .put('/api/v0/workflow-statuses/000000000000000000000000')
+          .put('/api/v0/customers/000000000000000000000000')
           .set('Accept', 'application/json')
           .send({
             _id: '000000000000000000000000',
-            name: updatedStatus.name,
-            color: updatedStatus.color,
-            pos: updatedStatus.pos,
+            email: updatedCustomer.email,
+            surname: updatedCustomer.surname,
+            given_name: updatedCustomer.given_name,
+            gender: updatedCustomer.gender,
+            status: updatedCustomer.status,
+            list_pos: updatedCustomer.list_pos,
+            workflow_pos: updatedCustomer.workflow_pos,
+            is_archived: updatedCustomer.is_archived,
           })
           .expect('Content-Type', /json/)
           .expect(404)
@@ -354,19 +426,24 @@ describe('controllers', function() {
       it('should return 409 if a parameter has conflicting value',
       function(done) {
 
-        // insert another workflow status to produce conflict
-        var conflictingStatus = new WorkflowStatus({
-          name: updatedStatus.name,
-          color: updatedStatus.color,
-          pos: updatedStatus.pos,
+        // insert another customer to produce conflict
+        var conflictingCustomer = new Customer({
+          email: updatedCustomer.email,
+          surname: updatedCustomer.surname,
+          given_name: updatedCustomer.given_name,
+          gender: updatedCustomer.gender,
+          status: updatedCustomer.status,
+          list_pos: updatedCustomer.list_pos,
+          workflow_pos: updatedCustomer.workflow_pos,
+          is_archived: updatedCustomer.is_archived,
         });
-        conflictingStatus.save(function(err) {
+        conflictingCustomer.save(function(err) {
           if (err) throw err;
 
           request(server)
-            .put('/api/v0/workflow-statuses/' + updatedStatus._id)
+            .put('/api/v0/customers/' + updatedCustomer._id)
             .set('Accept', 'application/json')
-            .send(updatedStatus)
+            .send(updatedCustomer)
             .expect('Content-Type', /json/)
             .expect(409)
             .end(function(err, res) {
@@ -381,32 +458,33 @@ describe('controllers', function() {
       });
     });
 
-    describe('PATCH /workflow-statuses/{workflowStatusId}', function() {
+    describe('PATCH /customers/{customerId}', function() {
 
-      var updateStatusPatch = {
-        name: 'updatedName',
-        pos: 88888,
+      var updateCustomerPatch = {
+        given_name: 'Alice',
+        gender: 'female',
+        list_pos: 88888,
       };
 
       it('should return 200 and the updated resource', function(done) {
 
         request(server)
-          .patch('/api/v0/workflow-statuses/' + existingStatus._id)
-          .set('Accept', 'application/merge-patch+json')
-          .send(updateStatusPatch)
+          .patch('/api/v0/customers/' + existingCustomer._id)
+          .set('Accept', 'application/json')
+          .send(updateCustomerPatch)
           .expect('Content-Type', /json/)
           .expect(200)
           .end(function(err, res) {
             should.not.exist(err);
 
-            res.body._id.should.eql(existingStatus._id.toString());
-            res.body.name.should.eql(updateStatusPatch.name);
-            res.body.color.should.eql(existingStatus.color);
-            res.body.pos.should.eql(updateStatusPatch.pos);
+            res.body._id.should.eql(existingCustomer._id.toString());
+            res.body.given_name.should.eql(updateCustomerPatch.given_name);
+            res.body.gender.should.eql(updateCustomerPatch.gender);
+            res.body.list_pos.should.eql(updateCustomerPatch.list_pos);
             new Date(res.body.created_at).should
-              .eql(existingStatus.created_at);
+              .eql(existingCustomer.created_at);
             new Date(res.body.updated_at).should.be
-              .greaterThan(existingStatus.updated_at);
+              .greaterThan(existingCustomer.updated_at);
 
             done();
           });
@@ -415,10 +493,10 @@ describe('controllers', function() {
       it('should return 400 if a parameter has invalid value', function(done) {
 
         request(server)
-          .patch('/api/v0/workflow-statuses/' + existingStatus._id)
-          .set('Accept', 'application/merge-patch+json')
+          .patch('/api/v0/customers/' + existingCustomer._id)
+          .set('Accept', 'application/json')
           .send({
-            color: 'not_a_color',
+            email: 'not_an_email',
           })
           .expect('Content-Type', /json/)
           .expect(400)
@@ -435,9 +513,9 @@ describe('controllers', function() {
       it('should return 404 if id in path is invalid', function(done) {
 
         request(server)
-          .patch('/api/v0/workflow-statuses/000')
-          .set('Accept', 'application/merge-patch+json')
-          .send(updateStatusPatch)
+          .patch('/api/v0/customers/000')
+          .set('Accept', 'application/json')
+          .send(updateCustomerPatch)
           .expect('Content-Type', /json/)
           .expect(404)
           .end(function(err, res) {
@@ -453,9 +531,9 @@ describe('controllers', function() {
       it('should return 404 if not found', function(done) {
 
         request(server)
-          .patch('/api/v0/workflow-statuses/000000000000000000000000')
-          .set('Accept', 'application/merge-patch+json')
-          .send(updateStatusPatch)
+          .patch('/api/v0/customers/000000000000000000000000')
+          .set('Accept', 'application/json')
+          .send(updateCustomerPatch)
           .expect('Content-Type', /json/)
           .expect(404)
           .end(function(err, res) {
@@ -471,19 +549,24 @@ describe('controllers', function() {
       it('should return 409 if a parameter has conflicting value',
       function(done) {
 
-        // insert another workflow status to produce conflict
-        var conflictingStatus = new WorkflowStatus({
-          name: updateStatusPatch.name,
-          color: existingStatus.color,
-          pos: updateStatusPatch.pos,
+        // insert another customer to produce conflict
+        var conflictingCustomer = new Customer({
+          email: existingCustomer.email,
+          surname: existingCustomer.surname,
+          given_name: updateCustomerPatch.given_name,
+          gender: updateCustomerPatch.gender,
+          status: existingCustomer.status,
+          list_pos: updateCustomerPatch.list_pos,
+          workflow_pos: existingCustomer.workflow_pos + 1,
+          is_archived: existingCustomer.is_archived,
         });
-        conflictingStatus.save(function(err) {
+        conflictingCustomer.save(function(err) {
           if (err) throw err;
 
           request(server)
-            .patch('/api/v0/workflow-statuses/' + existingStatus._id)
-            .set('Accept', 'application/merge-patch+json')
-            .send(updateStatusPatch)
+            .patch('/api/v0/customers/' + existingCustomer._id)
+            .set('Accept', 'application/json')
+            .send(updateCustomerPatch)
             .expect('Content-Type', /json/)
             .expect(409)
             .end(function(err, res) {
@@ -498,12 +581,12 @@ describe('controllers', function() {
       });
     });
 
-    describe('DELETE /workflow-statuses/{workflowStatusId}', function() {
+    describe('DELETE /customers/{customerId}', function() {
 
       it('should return 204', function(done) {
 
         request(server)
-          .delete('/api/v0/workflow-statuses/' + existingStatus._id)
+          .delete('/api/v0/customers/' + existingCustomer._id)
           .set('Accept', 'application/json')
           .expect(204)
           .end(function(err, res) {
@@ -516,7 +599,7 @@ describe('controllers', function() {
       it('should return 404 if id in path is invalid', function(done) {
 
         request(server)
-          .delete('/api/v0/workflow-statuses/000')
+          .delete('/api/v0/customers/000')
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(404)
@@ -533,7 +616,7 @@ describe('controllers', function() {
       it('should return 404 if not found', function(done) {
 
         request(server)
-          .delete('/api/v0/workflow-statuses/000000000000000000000000')
+          .delete('/api/v0/customers/000000000000000000000000')
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(404)
