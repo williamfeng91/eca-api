@@ -26,10 +26,6 @@ module.exports = {
 };
 
 function createStickyNote(req, res, next) {
-  var stickyNote = new StickyNote({
-    text: req.body.text,
-    pos: req.body.pos || 0
-  });
   var customerId = req.swagger.params.customerId.value;
   try {
     var _customerId = mongoose.Types.ObjectId(customerId);
@@ -42,29 +38,51 @@ function createStickyNote(req, res, next) {
       return next(new boom.badImplementation());
     } else if (!customer) {
       return next(new boom.notFound(CUSTOMER_NOT_FOUND))
-    } else {
-      // look for duplicate sticky note
+    }
+
+    var newPos = constants.POS_START_VAL;
+    if (req.body.pos != null) {
+      // if pos is specified
+      // Look for duplicate sticky note
       for (var i in customer.sticky_notes) {
-        if (customer.sticky_notes[i].pos === stickyNote.pos) {
+        if (customer.sticky_notes[i].pos === req.body.pos) {
           // found duplicate
           return next(new boom.conflict(DUPLICATE_FOUND));
         }
       }
-      customer.sticky_notes.push(stickyNote);
-      customer.save(function(err, customer) {
-        if (err) {
-          logger.error(err);
-          if (err.code === 11000) {
-              // duplicate key error
-              return next(new boom.conflict(DUPLICATE_FOUND));
-          }
-          return next(new boom.badImplementation());
-        } else {
-          res.status(201).json(
-            customer.sticky_notes.id(stickyNote._id).toObject());
+      newPos = req.body.pos;
+    } else {
+      // if pos is not specified
+      // Find the current maximum pos
+      var maxPos = 0;
+      for (var i in customer.sticky_notes) {
+        if (customer.sticky_notes[i].pos > maxPos) {
+          maxPos = customer.sticky_notes[i].pos;
         }
-      });
+      }
+      // Calculate new pos
+      if (customer.sticky_notes.length > 0) {
+        newPos = maxPos + constants.POS_AUTO_INCREMENT;
+      }
     }
+    var stickyNote = new StickyNote({
+      text: req.body.text,
+      pos: newPos,
+    });
+    // Save
+    customer.sticky_notes.push(stickyNote);
+    customer.save(function(err, customer) {
+      if (err) {
+        logger.error(err);
+        if (err.code === 11000) {
+            // duplicate key error
+            return next(new boom.conflict(DUPLICATE_FOUND));
+        }
+        return next(new boom.badImplementation());
+      }
+      return res.status(201)
+        .json(customer.sticky_notes.id(stickyNote._id).toObject());
+    });
   });
 }
 
@@ -81,9 +99,8 @@ function getStickyNotes(req, res, next) {
       return next(new boom.badImplementation());
     } else if (!customer) {
       return next(new boom.notFound(CUSTOMER_NOT_FOUND))
-    } else {
-      res.json(customer.sticky_notes);
     }
+    return res.json(customer.sticky_notes);
   });
 }
 
@@ -101,9 +118,8 @@ function getStickyNoteById(req, res, next) {
       return next(new boom.badImplementation());
     } else if (!customer) {
       return next(new boom.notFound(STICKY_NOTE_NOT_FOUND))
-    } else {
-      res.json(customer.sticky_notes.id(_stickyNoteId).toObject());
     }
+    return res.json(customer.sticky_notes.id(_stickyNoteId).toObject());
   });
 }
 
@@ -125,32 +141,29 @@ function updateStickyNote(req, res, next) {
       return next(new boom.badImplementation());
     } else if (!customer) {
       return next(new boom.notFound(STICKY_NOTE_NOT_FOUND));
-    } else {
-      // look for duplicate sticky note
-      for (var i in customer.sticky_notes) {
-        if (customer.sticky_notes[i]._id !== _stickyNoteId
-          && customer.sticky_notes[i].pos === updatedStickyNote.pos) {
-          // found duplicate
+    }
+    // look for duplicate sticky note
+    for (var i in customer.sticky_notes) {
+      if (customer.sticky_notes[i]._id !== _stickyNoteId
+        && customer.sticky_notes[i].pos === updatedStickyNote.pos) {
+        // found duplicate
+        return next(new boom.conflict(DUPLICATE_FOUND));
+      }
+    }
+    var stickyNote = customer.sticky_notes.id(_stickyNoteId);
+    stickyNote.text = updatedStickyNote.text;
+    stickyNote.pos = updatedStickyNote.pos;
+    customer.save(function(err, customer) {
+      if (err) {
+        logger.error(err);
+        if (err.code === 11000) {
+          // duplicate key error
           return next(new boom.conflict(DUPLICATE_FOUND));
         }
+        return next(new boom.badImplementation());
       }
-      var stickyNote = customer.sticky_notes.id(_stickyNoteId);
-      stickyNote.text = updatedStickyNote.text;
-      stickyNote.pos = updatedStickyNote.pos;
-      customer.save(function(err, customer) {
-        if (err) {
-          logger.error(err);
-          if (err.code === 11000) {
-            // duplicate key error
-            return next(new boom.conflict(DUPLICATE_FOUND));
-          }
-          return next(new boom.badImplementation());
-        } else {
-          res.json(
-            customer.sticky_notes.id(_stickyNoteId).toObject());
-        }
-      });
-    }
+      return res.json(customer.sticky_notes.id(_stickyNoteId).toObject());
+    });
   });
 }
 
@@ -169,33 +182,30 @@ function partialUpdateStickyNote(req, res, next) {
       return next(new boom.badImplementation());
     } else if (!customer) {
       return next(new boom.notFound(STICKY_NOTE_NOT_FOUND))
-    } else {
-      if (updatePatch.pos) {
-        // look for duplicate sticky note
-        for (var i in customer.sticky_notes) {
-          if (customer.sticky_notes[i]._id !== _stickyNoteId
-            && customer.sticky_notes[i].pos === updatePatch.pos) {
-            // found duplicate
-            return next(new boom.conflict(DUPLICATE_FOUND));
-          }
+    }
+    if (updatePatch.pos) {
+      // look for duplicate sticky note
+      for (var i in customer.sticky_notes) {
+        if (customer.sticky_notes[i]._id !== _stickyNoteId
+          && customer.sticky_notes[i].pos === updatePatch.pos) {
+          // found duplicate
+          return next(new boom.conflict(DUPLICATE_FOUND));
         }
       }
-      var stickyNote = customer.sticky_notes.id(_stickyNoteId);
-      stickyNote = jsonmergepatch.apply(stickyNote, updatePatch);
-      customer.save(function(err, customer) {
-        if (err) {
-          logger.error(err);
-          if (err.code === 11000) {
-            // duplicate key error
-            return next(new boom.conflict(DUPLICATE_FOUND));
-          }
-          return next(new boom.badImplementation());
-        } else {
-          res.json(
-            customer.sticky_notes.id(_stickyNoteId).toObject());
-        }
-      });
     }
+    var stickyNote = customer.sticky_notes.id(_stickyNoteId);
+    stickyNote = jsonmergepatch.apply(stickyNote, updatePatch);
+    customer.save(function(err, customer) {
+      if (err) {
+        logger.error(err);
+        if (err.code === 11000) {
+          // duplicate key error
+          return next(new boom.conflict(DUPLICATE_FOUND));
+        }
+        return next(new boom.badImplementation());
+      }
+      return res.json(customer.sticky_notes.id(_stickyNoteId).toObject());
+    });
   });
 }
 
@@ -213,16 +223,14 @@ function deleteStickyNote(req, res, next) {
       return next(new boom.badImplementation());
     } else if (!customer) {
       return next(new boom.notFound(STICKY_NOTE_NOT_FOUND))
-    } else {
-      customer.sticky_notes.id(_stickyNoteId).remove();
-      customer.save(function(err) {
-        if (err) {
-          logger.error(err);
-          return next(new boom.badImplementation());
-        } else {
-          res.status(204).send('');
-        }
-      });
     }
+    customer.sticky_notes.id(_stickyNoteId).remove();
+    customer.save(function(err) {
+      if (err) {
+        logger.error(err);
+        return next(new boom.badImplementation());
+      }
+      return res.status(204).send('');
+    });
   });
 }

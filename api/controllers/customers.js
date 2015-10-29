@@ -91,9 +91,8 @@ function createCustomer(req, res, next) {
               return next(new boom.conflict(DUPLICATE_FOUND));
             }
             return next(new boom.badImplementation());
-          } else {
-            res.status(201).json(newCustomer.toObject());
           }
+          return res.status(201).json(newCustomer.toObject());
         });
       });
     });
@@ -107,10 +106,9 @@ function getCustomers(req, res, next) {
       return next(new boom.badImplementation());
     } else if (!customers) {
       // return an empty array if no data found
-      res.json([]);
-    } else {
-      res.json(customers);
+      return res.json([]);
     }
+    return res.json(customers);
   });
 }
 
@@ -127,9 +125,8 @@ function getCustomerById(req, res, next) {
       return next(new boom.badImplementation());
     } else if (!customer) {
       return next(new boom.notFound(CUSTOMER_NOT_FOUND))
-    } else {
-      res.json(customer.toObject());
     }
+    return res.json(customer.toObject());
   });
 }
 
@@ -150,37 +147,35 @@ function updateCustomer(req, res, next) {
       return next(new boom.badImplementation());
     } else if (!customer) {
       return next(new boom.notFound(CUSTOMER_NOT_FOUND));
-    } else {
-      customer.email = req.body.email;
-      customer.surname = req.body.surname;
-      customer.given_name = req.body.given_name;
-      customer.nickname = req.body.nickname;
-      customer.real_name = req.body.real_name;
-      customer.gender = req.body.gender;
-      customer.birthday = req.body.birthday;
-      customer.mobile = req.body.mobile;
-      customer.qq = req.body.qq;
-      customer.wechat = req.body.wechat;
-      customer.au_address = req.body.au_address;
-      customer.foreign_address = req.body.foreign_address;
-      customer.visa_expiry_date = req.body.visa_expiry_date;
-      customer.status = req.body.status;
-      customer.is_archived = req.body.is_archived;
-      customer.list_pos = req.body.list_pos;
-      customer.workflow_pos = req.body.workflow_pos;
-      customer.save(function(err, updatedCustomer) {
-        if (err) {
-          logger.error(err);
-          if (err.code == 11000) {
-            // duplicate key error
-            return next(new boom.conflict(DUPLICATE_FOUND));
-          }
-          return next(new boom.badImplementation());
-        } else {
-          res.json(updatedCustomer.toObject());
-        }
-      });
     }
+    customer.email = req.body.email;
+    customer.surname = req.body.surname;
+    customer.given_name = req.body.given_name;
+    customer.nickname = req.body.nickname;
+    customer.real_name = req.body.real_name;
+    customer.gender = req.body.gender;
+    customer.birthday = req.body.birthday;
+    customer.mobile = req.body.mobile;
+    customer.qq = req.body.qq;
+    customer.wechat = req.body.wechat;
+    customer.au_address = req.body.au_address;
+    customer.foreign_address = req.body.foreign_address;
+    customer.visa_expiry_date = req.body.visa_expiry_date;
+    customer.status = req.body.status;
+    customer.is_archived = req.body.is_archived;
+    customer.list_pos = req.body.list_pos;
+    customer.workflow_pos = req.body.workflow_pos;
+    customer.save(function(err, updatedCustomer) {
+      if (err) {
+        logger.error(err);
+        if (err.code == 11000) {
+          // duplicate key error
+          return next(new boom.conflict(DUPLICATE_FOUND));
+        }
+        return next(new boom.badImplementation());
+      }
+      return res.json(updatedCustomer.toObject());
+    });
   });
 }
 
@@ -198,21 +193,19 @@ function partialUpdateCustomer(req, res, next) {
       return next(new boom.badImplementation());
     } else if (!customer) {
       return next(new boom.notFound(CUSTOMER_NOT_FOUND));
-    } else {
-      customer = jsonmergepatch.apply(customer, req.body);
-      customer.save(function(err, updatedCustomer) {
-        if (err) {
-          logger.error(err);
-          if (err.code == 11000) {
-            // duplicate key error
-            return next(new boom.conflict(DUPLICATE_FOUND));
-          }
-          return next(new boom.badImplementation());
-        } else {
-          res.json(updatedCustomer.toObject());
-        }
-      });
     }
+    customer = jsonmergepatch.apply(customer, req.body);
+    customer.save(function(err, updatedCustomer) {
+      if (err) {
+        logger.error(err);
+        if (err.code == 11000) {
+          // duplicate key error
+          return next(new boom.conflict(DUPLICATE_FOUND));
+        }
+        return next(new boom.badImplementation());
+      }
+      return res.json(updatedCustomer.toObject());
+    });
   });
 }
 
@@ -230,15 +223,13 @@ function deleteCustomer(req, res, next) {
       return next(new boom.badImplementation());
     } else if (!customer) {
       return next(new boom.notFound(CUSTOMER_NOT_FOUND))
-    } else {
-      customer.remove(function(err) {
-        if (err) {
-          logger.error(err);
-          return next(new boom.badImplementation());
-        } else {
-          res.status(204).send('');
-        }
-      });
     }
+    customer.remove(function(err) {
+      if (err) {
+        logger.error(err);
+        return next(new boom.badImplementation());
+      }
+      return res.status(204).send('');
+    });
   });
 }

@@ -1,6 +1,7 @@
 var should = require('should');
 var request = require('supertest');
 var mongoose = require('mongoose');
+var constants = require('../../../api/helpers/constants');
 
 var server = require('../../../app');
 var models = require('../../../api/models');
@@ -60,12 +61,46 @@ describe('controllers', function() {
 
     describe('POST /customers/{customerId}/sticky-notes', function() {
 
-      it('should return 201 and the resource if successfully created',
+      var newStickyNote = {
+        text: 'new note',
+      };
+
+      it('should return 201 when inserting into empty database',
       function(done) {
 
-        var newStickyNote = {
-          text: 'new note',
-        };
+        Customer.findById(existingCustomer._id, function(err, customer) {
+          if (err) throw err;
+          if (!customer) throw 'Customer not found';
+          // empty the array
+          customer.sticky_notes = [];
+          customer.save(function(err) {
+            if (err) throw err;
+
+            request(server)
+              .post('/api/v0/customers/' + existingCustomer._id
+                  + '/sticky-notes')
+              .set('Accept', 'application/json')
+              .send(newStickyNote)
+              .expect('Content-Type', /json/)
+              .expect(201)
+              .end(function(err, res) {
+                should.not.exist(err);
+
+                res.body.should.have.property('_id');
+                res.body.text.should.eql(newStickyNote.text);
+                res.body.pos.should.eql(constants.POS_START_VAL);
+                res.body.should.have.property('created_at');
+                res.body.should.have.property('updated_at');
+                res.body.created_at.should.eql(res.body.updated_at);
+
+                done();
+              });
+          });
+        });
+      });
+
+      it('should return 201 when inserting into database with existing data',
+      function(done) {
 
         request(server)
           .post('/api/v0/customers/' + existingCustomer._id + '/sticky-notes')
@@ -78,7 +113,8 @@ describe('controllers', function() {
 
             res.body.should.have.property('_id');
             res.body.text.should.eql(newStickyNote.text);
-            res.body.should.have.property('pos');
+            res.body.pos.should.eql(
+              existingStickyNote.pos + constants.POS_AUTO_INCREMENT);
             res.body.should.have.property('created_at');
             res.body.should.have.property('updated_at');
             res.body.created_at.should.eql(res.body.updated_at);
@@ -173,7 +209,7 @@ describe('controllers', function() {
           .post('/api/v0/customers/' + existingCustomer._id + '/sticky-notes')
           .set('Accept', 'application/json')
           .send({
-            text: 'conflicting note',
+            text: newStickyNote.text,
             pos: existingStickyNote.pos,
           })
           .expect('Content-Type', /json/)
@@ -191,7 +227,7 @@ describe('controllers', function() {
 
     describe('GET /customers/{customerId}/sticky-notes', function() {
 
-      it('should return 200 if successful', function(done) {
+      it('should return 200 and the resources', function(done) {
 
         request(server)
           .get('/api/v0/customers/' + existingCustomer._id + '/sticky-notes')
@@ -211,7 +247,7 @@ describe('controllers', function() {
 
     describe('GET /sticky-notes/{stickyNoteId}', function() {
 
-      it('should return 200 if successful', function(done) {
+      it('should return 200 and the resource', function(done) {
 
         request(server)
           .get('/api/v0/sticky-notes/' + existingStickyNote._id)
@@ -270,13 +306,13 @@ describe('controllers', function() {
 
     describe('PUT /sticky-notes/{stickyNoteId}', function() {
 
-      it('should return 200 if successfully updated', function(done) {
+      var updatedStickyNote = {
+        _id: existingStickyNote._id.toString(),
+        text: 'updated note',
+        pos: 88888,
+      };
 
-        var updatedStickyNote = {
-          _id: existingStickyNote._id.toString(),
-          text: 'updated note',
-          pos: 88888,
-        };
+      it('should return 200 if successfully updated', function(done) {
 
         request(server)
           .put('/api/v0/sticky-notes/' + existingStickyNote._id)
@@ -324,7 +360,7 @@ describe('controllers', function() {
           .set('Accept', 'application/json')
           .send({
             _id: existingStickyNote._id.toString(),
-            text: 'updated note',
+            text: existingStickyNote.text,
             pos: 'not_a_number',
           })
           .expect('Content-Type', /json/)
@@ -344,11 +380,7 @@ describe('controllers', function() {
         request(server)
           .put('/api/v0/sticky-notes/000')
           .set('Accept', 'application/json')
-          .send({
-            _id: '000000000000000000000000',
-            text: existingStickyNote.text,
-            pos: existingStickyNote.pos,
-          })
+          .send(updatedStickyNote)
           .expect('Content-Type', /json/)
           .expect(404)
           .end(function(err, res) {
@@ -390,22 +422,18 @@ describe('controllers', function() {
         Customer.findById(existingCustomer._id, function(err, customer) {
           if (err) throw err;
           if (!customer) throw 'Customer not found';
-          var newStickyNote = new StickyNote({
-            text: 'conflicting note',
-            pos: 88888,
+          var conflictingStickyNote = new StickyNote({
+            text: updatedStickyNote.text,
+            pos: updatedStickyNote.pos,
           });
-          customer.sticky_notes.push(newStickyNote);
-          customer.save(function(err, customer) {
+          customer.sticky_notes.push(conflictingStickyNote);
+          customer.save(function(err) {
             if (err) throw err;
 
             request(server)
-              .put('/api/v0/sticky-notes/' + existingStickyNote._id)
+              .put('/api/v0/sticky-notes/' + updatedStickyNote._id)
               .set('Accept', 'application/json')
-              .send({
-                _id: existingStickyNote._id.toString(),
-                text: existingStickyNote.text,
-                pos: 88888,
-              })
+              .send(updatedStickyNote)
               .expect('Content-Type', /json/)
               .expect(409)
               .end(function(err, res) {
@@ -423,11 +451,12 @@ describe('controllers', function() {
 
     describe('PATCH /sticky-notes/{stickyNoteId}', function() {
 
-      it('should return 200 if successfully updated', function(done) {
+      var updatePatch = {
+        text: 'updated note',
+        pos: 88888,
+      };
 
-        var updatePatch = {
-          text: 'updated note',
-        };
+      it('should return 200 if successfully updated', function(done) {
 
         request(server)
           .patch('/api/v0/sticky-notes/' + existingStickyNote._id)
@@ -440,7 +469,7 @@ describe('controllers', function() {
 
             res.body._id.should.eql(existingStickyNote._id.toString());
             res.body.text.should.eql(updatePatch.text);
-            res.body.pos.should.eql(existingStickyNote.pos);
+            res.body.pos.should.eql(updatePatch.pos);
             new Date(res.body.created_at).should
               .eql(existingStickyNote.created_at);
             new Date(res.body.updated_at).should.be
@@ -456,7 +485,7 @@ describe('controllers', function() {
           .patch('/api/v0/sticky-notes/' + existingStickyNote._id)
           .set('Accept', 'application/merge-patch+json')
           .send({
-            text: 'invalid patch',
+            text: updatePatch.text,
             pos: 'not_a_number',
           })
           .expect('Content-Type', /json/)
@@ -476,9 +505,7 @@ describe('controllers', function() {
         request(server)
           .patch('/api/v0/sticky-notes/000')
           .set('Accept', 'application/merge-patch+json')
-          .send({
-            text: existingStickyNote.text,
-          })
+          .send(updatePatch)
           .expect('Content-Type', /json/)
           .expect(404)
           .end(function(err, res) {
@@ -496,9 +523,7 @@ describe('controllers', function() {
         request(server)
           .patch('/api/v0/sticky-notes/000000000000000000000000')
           .set('Accept', 'application/merge-patch+json')
-          .send({
-            text: existingStickyNote.text,
-          })
+          .send(updatePatch)
           .expect('Content-Type', /json/)
           .expect(404)
           .end(function(err, res) {
@@ -518,21 +543,18 @@ describe('controllers', function() {
         Customer.findById(existingCustomer._id, function(err, customer) {
           if (err) throw err;
           if (!customer) throw 'Customer not found';
-          var newStickyNote = new StickyNote({
-            text: 'conflicting note',
-            pos: 88888,
+          var conflictingStickyNote = new StickyNote({
+            text: updatePatch.text,
+            pos: updatePatch.pos,
           });
-          customer.sticky_notes.push(newStickyNote);
-          customer.save(function(err, customer) {
+          customer.sticky_notes.push(conflictingStickyNote);
+          customer.save(function(err) {
             if (err) throw err;
 
             request(server)
               .patch('/api/v0/sticky-notes/' + existingStickyNote._id)
               .set('Accept', 'application/json')
-              .send({
-                text: existingStickyNote.text,
-                pos: 88888,
-              })
+              .send(updatePatch)
               .expect('Content-Type', /json/)
               .expect(409)
               .end(function(err, res) {
