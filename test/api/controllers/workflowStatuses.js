@@ -383,7 +383,7 @@ describe('controllers', function() {
 
     describe('PATCH /workflow-statuses/{workflowStatusId}', function() {
 
-      var updateStatusPatch = {
+      var updatePatch = {
         name: 'updatedName',
         pos: 88888,
       };
@@ -392,17 +392,17 @@ describe('controllers', function() {
 
         request(server)
           .patch('/api/v0/workflow-statuses/' + existingStatus._id)
-          .set('Accept', 'application/merge-patch+json')
-          .send(updateStatusPatch)
+          .set('Accept', 'application/json')
+          .send(updatePatch)
           .expect('Content-Type', /json/)
           .expect(200)
           .end(function(err, res) {
             should.not.exist(err);
 
             res.body._id.should.eql(existingStatus._id.toString());
-            res.body.name.should.eql(updateStatusPatch.name);
+            res.body.name.should.eql(updatePatch.name);
             res.body.color.should.eql(existingStatus.color);
-            res.body.pos.should.eql(updateStatusPatch.pos);
+            res.body.pos.should.eql(updatePatch.pos);
             new Date(res.body.created_at).should
               .eql(existingStatus.created_at);
             new Date(res.body.updated_at).should.be
@@ -416,7 +416,7 @@ describe('controllers', function() {
 
         request(server)
           .patch('/api/v0/workflow-statuses/' + existingStatus._id)
-          .set('Accept', 'application/merge-patch+json')
+          .set('Accept', 'application/json')
           .send({
             color: 'not_a_color',
           })
@@ -436,8 +436,8 @@ describe('controllers', function() {
 
         request(server)
           .patch('/api/v0/workflow-statuses/000')
-          .set('Accept', 'application/merge-patch+json')
-          .send(updateStatusPatch)
+          .set('Accept', 'application/json')
+          .send(updatePatch)
           .expect('Content-Type', /json/)
           .expect(404)
           .end(function(err, res) {
@@ -454,8 +454,8 @@ describe('controllers', function() {
 
         request(server)
           .patch('/api/v0/workflow-statuses/000000000000000000000000')
-          .set('Accept', 'application/merge-patch+json')
-          .send(updateStatusPatch)
+          .set('Accept', 'application/json')
+          .send(updatePatch)
           .expect('Content-Type', /json/)
           .expect(404)
           .end(function(err, res) {
@@ -473,17 +473,17 @@ describe('controllers', function() {
 
         // insert another workflow status to produce conflict
         var conflictingStatus = new WorkflowStatus({
-          name: updateStatusPatch.name,
+          name: updatePatch.name,
           color: existingStatus.color,
-          pos: updateStatusPatch.pos,
+          pos: updatePatch.pos,
         });
         conflictingStatus.save(function(err) {
           if (err) throw err;
 
           request(server)
             .patch('/api/v0/workflow-statuses/' + existingStatus._id)
-            .set('Accept', 'application/merge-patch+json')
-            .send(updateStatusPatch)
+            .set('Accept', 'application/json')
+            .send(updatePatch)
             .expect('Content-Type', /json/)
             .expect(409)
             .end(function(err, res) {

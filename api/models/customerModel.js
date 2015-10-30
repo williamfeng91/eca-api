@@ -1,5 +1,6 @@
-var mongoose = require('mongoose'),
-    Schema = mongoose.Schema;
+var mongoose = require('mongoose');
+var Schema = mongoose.Schema;
+var Checklist = require('./checklistModel');
 var StickyNote = require('./stickyNoteModel');
 
 var CustomerSchema = new Schema({
@@ -19,17 +20,18 @@ var CustomerSchema = new Schema({
   status: {
     type: Schema.Types.ObjectId,
     ref: 'WorkflowStatus',
-    required: true
+    required: true,
   },
   list_pos: { type: Number, required: true, unique: true },
   workflow_pos: { type: Number, required: true, unique: true },
-  is_archived: { type: Boolean, default: false },
-  sticky_notes: [StickyNote.schema]
+  is_archived: { type: Boolean, required: true, default: false },
+  checklists: [Checklist.schema],
+  sticky_notes: [StickyNote.schema],
 },
 {
   timestamps: {
     createdAt: 'created_at',
-    updatedAt: 'updated_at'
+    updatedAt: 'updated_at',
   }
 });
 

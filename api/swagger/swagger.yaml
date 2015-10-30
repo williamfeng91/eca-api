@@ -544,9 +544,11 @@ paths:
 
   ##### Checklist #####
   /customers/{customerId}/checklists:
+    x-swagger-router-controller: checklists
     parameters:
       - $ref: '#/parameters/customerId'
     post:
+      operationId: createChecklist
       tags:
         - Checklist
       description: ""
@@ -576,6 +578,7 @@ paths:
           schema:
             $ref: "#/definitions/ErrorResponse"
     get:
+      operationId: getChecklists
       tags:
         - Checklist
       description: ""
@@ -592,9 +595,11 @@ paths:
           schema:
             $ref: "#/definitions/ErrorResponse"
   /checklists/{checklistId}:
+    x-swagger-router-controller: checklists
     parameters:
       - $ref: '#/parameters/checklistId'
     get:
+      operationId: getChecklistById
       tags:
         - Checklist
       description: ""
@@ -613,6 +618,7 @@ paths:
           schema:
             $ref: "#/definitions/ErrorResponse"
     put:
+      operationId: updateChecklist
       tags:
         - Checklist
       description: ""
@@ -682,6 +688,7 @@ paths:
           schema:
             $ref: "#/definitions/ErrorResponse"
     delete:
+      operationId: deleteChecklist
       tags:
         - Checklist
       description: ""
@@ -698,9 +705,11 @@ paths:
           schema:
             $ref: "#/definitions/ErrorResponse"
   /checklists/{checklistId}/checklist-items:
+    x-swagger-router-controller: checklistItems
     parameters:
       - $ref: '#/parameters/checklistId'
     post:
+      operationId: createChecklistItem
       tags:
         - Checklist
       description: ""
@@ -730,6 +739,7 @@ paths:
           schema:
             $ref: "#/definitions/ErrorResponse"
     get:
+      operationId: getChecklistItems
       tags:
         - Checklist
       description: ""
@@ -745,10 +755,13 @@ paths:
           description: Internal server error
           schema:
             $ref: "#/definitions/ErrorResponse"
-  /checklist-items/{checklistItemId}:
+  /checklists/{checklistId}/checklist-items/{checklistItemId}:
+    x-swagger-router-controller: checklistItems
     parameters:
+      - $ref: '#/parameters/checklistId'
       - $ref: '#/parameters/checklistItemId'
     get:
+      operationId: getChecklistItemById
       tags:
         - Checklist
       description: ""
@@ -767,6 +780,7 @@ paths:
           schema:
             $ref: "#/definitions/ErrorResponse"
     put:
+      operationId: updateChecklistItem
       tags:
         - Checklist
       description: ""
@@ -836,6 +850,7 @@ paths:
           schema:
             $ref: "#/definitions/ErrorResponse"
     delete:
+      operationId: deleteChecklistItem
       tags:
         - Checklist
       description: ""

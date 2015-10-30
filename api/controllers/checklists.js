@@ -1,7 +1,7 @@
 'use strict';
 
 var mongoose = require('mongoose');
-var logger = require('log4js').getLogger('StickyNote Controller');
+var logger = require('log4js').getLogger('Checklist Controller');
 var util = require('util');
 var boom = require('boom');
 var jsonmergepatch = require('json-merge-patch');
@@ -9,23 +9,23 @@ var constants = require('../helpers/constants');
 
 var models = require('../models');
 var Customer = models.Customer;
-var StickyNote = models.StickyNote;
+var Checklist = models.Checklist;
 
+var CHECKLIST_NOT_FOUND = 'The checklist was not found';
 var CUSTOMER_NOT_FOUND = 'The customer was not found';
 var DUPLICATE_FOUND = 'Found duplicate';
-var STICKY_NOTE_NOT_FOUND = 'The sticky note was not found';
-var WRONG_ID = 'Wrong sticky note ID';
+var WRONG_ID = 'Wrong checklist ID';
 
 module.exports = {
-  createStickyNote: createStickyNote,
-  getStickyNotes: getStickyNotes,
-  getStickyNoteById: getStickyNoteById,
-  updateStickyNote: updateStickyNote,
-  partialUpdateStickyNote: partialUpdateStickyNote,
-  deleteStickyNote: deleteStickyNote
+  createChecklist: createChecklist,
+  getChecklists: getChecklists,
+  getChecklistById: getChecklistById,
+  updateChecklist: updateChecklist,
+  partialUpdateChecklist: partialUpdateChecklist,
+  deleteChecklist: deleteChecklist
 };
 
-function createStickyNote(req, res, next) {
+function createChecklist(req, res, next) {
   var customerId = req.swagger.params.customerId.value;
   try {
     var _customerId = mongoose.Types.ObjectId(customerId);
@@ -43,9 +43,9 @@ function createStickyNote(req, res, next) {
     var newPos = constants.POS_START_VAL;
     if (req.body.pos != null) {
       // if pos is specified
-      // look for duplicate sticky note
-      for (var i in customer.sticky_notes) {
-        if (customer.sticky_notes[i].pos === req.body.pos) {
+      // look for duplicate checklist
+      for (var i in customer.checklists) {
+        if (customer.checklists[i].pos === req.body.pos) {
           // found duplicate
           return next(new boom.conflict(DUPLICATE_FOUND));
         }
@@ -55,22 +55,22 @@ function createStickyNote(req, res, next) {
       // if pos is not specified
       // find the current maximum pos
       var maxPos = 0;
-      for (var i in customer.sticky_notes) {
-        if (customer.sticky_notes[i].pos > maxPos) {
-          maxPos = customer.sticky_notes[i].pos;
+      for (var i in customer.checklists) {
+        if (customer.checklists[i].pos > maxPos) {
+          maxPos = customer.checklists[i].pos;
         }
       }
       // calculate new pos
-      if (customer.sticky_notes.length > 0) {
+      if (customer.checklists.length > 0) {
         newPos = maxPos + constants.POS_AUTO_INCREMENT;
       }
     }
-    var stickyNote = new StickyNote({
-      text: req.body.text,
+    var checklist = new Checklist({
+      name: req.body.name,
       pos: newPos,
     });
     // save
-    customer.sticky_notes.push(stickyNote);
+    customer.checklists.push(checklist);
     customer.save(function(err, customer) {
       if (err) {
         logger.error(err);
@@ -81,12 +81,12 @@ function createStickyNote(req, res, next) {
         return next(new boom.badImplementation());
       }
       return res.status(201)
-        .json(customer.sticky_notes.id(stickyNote._id).toObject());
+        .json(customer.checklists.id(checklist._id).toObject());
     });
   });
 }
 
-function getStickyNotes(req, res, next) {
+function getChecklists(req, res, next) {
   var customerId = req.swagger.params.customerId.value;
   try {
     var _customerId = mongoose.Types.ObjectId(customerId);
@@ -100,59 +100,59 @@ function getStickyNotes(req, res, next) {
     } else if (!customer) {
       return next(new boom.notFound(CUSTOMER_NOT_FOUND))
     }
-    return res.json(customer.sticky_notes);
+    return res.json(customer.checklists);
   });
 }
 
-function getStickyNoteById(req, res, next) {
-  var stickyNoteId = req.swagger.params.stickyNoteId.value;
+function getChecklistById(req, res, next) {
+  var checklistId = req.swagger.params.checklistId.value;
   try {
-    var _stickyNoteId = mongoose.Types.ObjectId(stickyNoteId);
+    var _checklistId = mongoose.Types.ObjectId(checklistId);
   } catch (err) {
-    return next(new boom.notFound(STICKY_NOTE_NOT_FOUND));
+    return next(new boom.notFound(CHECKLIST_NOT_FOUND));
   }
-  Customer.findOne({'sticky_notes._id': _stickyNoteId},
+  Customer.findOne({'checklists._id': _checklistId},
   function(err, customer) {
     if (err) {
       logger.error(err);
       return next(new boom.badImplementation());
     } else if (!customer) {
-      return next(new boom.notFound(STICKY_NOTE_NOT_FOUND))
+      return next(new boom.notFound(CHECKLIST_NOT_FOUND))
     }
-    return res.json(customer.sticky_notes.id(_stickyNoteId).toObject());
+    return res.json(customer.checklists.id(_checklistId).toObject());
   });
 }
 
-function updateStickyNote(req, res, next) {
-  var stickyNoteId = req.swagger.params.stickyNoteId.value;
+function updateChecklist(req, res, next) {
+  var checklistId = req.swagger.params.checklistId.value;
   try {
-    var _stickyNoteId = mongoose.Types.ObjectId(stickyNoteId);
-    if (req.body._id != stickyNoteId) {
+    var _checklistId = mongoose.Types.ObjectId(checklistId);
+    if (req.body._id != checklistId) {
       return next(new boom.badRequest(WRONG_ID));
     }
   } catch (err) {
-    return next(new boom.notFound(STICKY_NOTE_NOT_FOUND));
+    return next(new boom.notFound(CHECKLIST_NOT_FOUND));
   }
-  var updatedStickyNote = req.body;
-  Customer.findOne({'sticky_notes._id': _stickyNoteId},
+  var updatedChecklist = req.body;
+  Customer.findOne({'checklists._id': _checklistId},
   function(err, customer) {
     if (err) {
       logger.error(err);
       return next(new boom.badImplementation());
     } else if (!customer) {
-      return next(new boom.notFound(STICKY_NOTE_NOT_FOUND));
+      return next(new boom.notFound(CHECKLIST_NOT_FOUND));
     }
-    // look for duplicate sticky note
-    for (var i in customer.sticky_notes) {
-      if (customer.sticky_notes[i]._id !== _stickyNoteId
-        && customer.sticky_notes[i].pos === updatedStickyNote.pos) {
+    // look for duplicate checklist
+    for (var i in customer.checklists) {
+      if (customer.checklists[i]._id !== _checklistId
+        && customer.checklists[i].pos === updatedChecklist.pos) {
         // found duplicate
         return next(new boom.conflict(DUPLICATE_FOUND));
       }
     }
-    var stickyNote = customer.sticky_notes.id(_stickyNoteId);
-    stickyNote.text = updatedStickyNote.text;
-    stickyNote.pos = updatedStickyNote.pos;
+    var checklist = customer.checklists.id(_checklistId);
+    checklist.name = updatedChecklist.name;
+    checklist.pos = updatedChecklist.pos;
     customer.save(function(err, customer) {
       if (err) {
         logger.error(err);
@@ -162,39 +162,39 @@ function updateStickyNote(req, res, next) {
         }
         return next(new boom.badImplementation());
       }
-      return res.json(customer.sticky_notes.id(_stickyNoteId).toObject());
+      return res.json(customer.checklists.id(_checklistId).toObject());
     });
   });
 }
 
-function partialUpdateStickyNote(req, res, next) {
-  var stickyNoteId = req.swagger.params.stickyNoteId.value;
+function partialUpdateChecklist(req, res, next) {
+  var checklistId = req.swagger.params.checklistId.value;
   try {
-    var _stickyNoteId = mongoose.Types.ObjectId(stickyNoteId);
+    var _checklistId = mongoose.Types.ObjectId(checklistId);
   } catch (err) {
-    return next(new boom.notFound(STICKY_NOTE_NOT_FOUND));
+    return next(new boom.notFound(CHECKLIST_NOT_FOUND));
   }
   var updatePatch = req.body;
-  Customer.findOne({'sticky_notes._id': _stickyNoteId},
+  Customer.findOne({'checklists._id': _checklistId},
   function(err, customer) {
     if (err) {
       logger.error(err);
       return next(new boom.badImplementation());
     } else if (!customer) {
-      return next(new boom.notFound(STICKY_NOTE_NOT_FOUND))
+      return next(new boom.notFound(CHECKLIST_NOT_FOUND))
     }
     if (updatePatch.pos) {
-      // look for duplicate sticky note
-      for (var i in customer.sticky_notes) {
-        if (customer.sticky_notes[i]._id !== _stickyNoteId
-          && customer.sticky_notes[i].pos === updatePatch.pos) {
+      // look for duplicate checklist
+      for (var i in customer.checklists) {
+        if (customer.checklists[i]._id !== _checklistId
+          && customer.checklists[i].pos === updatePatch.pos) {
           // found duplicate
           return next(new boom.conflict(DUPLICATE_FOUND));
         }
       }
     }
-    var stickyNote = customer.sticky_notes.id(_stickyNoteId);
-    stickyNote = jsonmergepatch.apply(stickyNote, updatePatch);
+    var checklist = customer.checklists.id(_checklistId);
+    checklist = jsonmergepatch.apply(checklist, updatePatch);
     customer.save(function(err, customer) {
       if (err) {
         logger.error(err);
@@ -204,27 +204,27 @@ function partialUpdateStickyNote(req, res, next) {
         }
         return next(new boom.badImplementation());
       }
-      return res.json(customer.sticky_notes.id(_stickyNoteId).toObject());
+      return res.json(customer.checklists.id(_checklistId).toObject());
     });
   });
 }
 
-function deleteStickyNote(req, res, next) {
-  var stickyNoteId = req.swagger.params.stickyNoteId.value;
+function deleteChecklist(req, res, next) {
+  var checklistId = req.swagger.params.checklistId.value;
   try {
-    var _stickyNoteId = mongoose.Types.ObjectId(stickyNoteId);
+    var _checklistId = mongoose.Types.ObjectId(checklistId);
   } catch (err) {
-    return next(new boom.notFound(STICKY_NOTE_NOT_FOUND));
+    return next(new boom.notFound(CHECKLIST_NOT_FOUND));
   }
-  Customer.findOne({'sticky_notes._id': _stickyNoteId},
+  Customer.findOne({'checklists._id': _checklistId},
   function(err, customer) {
     if (err) {
       logger.error(err);
       return next(new boom.badImplementation());
     } else if (!customer) {
-      return next(new boom.notFound(STICKY_NOTE_NOT_FOUND))
+      return next(new boom.notFound(CHECKLIST_NOT_FOUND))
     }
-    customer.sticky_notes.id(_stickyNoteId).remove();
+    customer.checklists.id(_checklistId).remove();
     customer.save(function(err) {
       if (err) {
         logger.error(err);

@@ -460,7 +460,7 @@ describe('controllers', function() {
 
     describe('PATCH /customers/{customerId}', function() {
 
-      var updateCustomerPatch = {
+      var updatePatch = {
         given_name: 'Alice',
         gender: 'female',
         list_pos: 88888,
@@ -471,16 +471,16 @@ describe('controllers', function() {
         request(server)
           .patch('/api/v0/customers/' + existingCustomer._id)
           .set('Accept', 'application/json')
-          .send(updateCustomerPatch)
+          .send(updatePatch)
           .expect('Content-Type', /json/)
           .expect(200)
           .end(function(err, res) {
             should.not.exist(err);
 
             res.body._id.should.eql(existingCustomer._id.toString());
-            res.body.given_name.should.eql(updateCustomerPatch.given_name);
-            res.body.gender.should.eql(updateCustomerPatch.gender);
-            res.body.list_pos.should.eql(updateCustomerPatch.list_pos);
+            res.body.given_name.should.eql(updatePatch.given_name);
+            res.body.gender.should.eql(updatePatch.gender);
+            res.body.list_pos.should.eql(updatePatch.list_pos);
             new Date(res.body.created_at).should
               .eql(existingCustomer.created_at);
             new Date(res.body.updated_at).should.be
@@ -515,7 +515,7 @@ describe('controllers', function() {
         request(server)
           .patch('/api/v0/customers/000')
           .set('Accept', 'application/json')
-          .send(updateCustomerPatch)
+          .send(updatePatch)
           .expect('Content-Type', /json/)
           .expect(404)
           .end(function(err, res) {
@@ -533,7 +533,7 @@ describe('controllers', function() {
         request(server)
           .patch('/api/v0/customers/000000000000000000000000')
           .set('Accept', 'application/json')
-          .send(updateCustomerPatch)
+          .send(updatePatch)
           .expect('Content-Type', /json/)
           .expect(404)
           .end(function(err, res) {
@@ -553,10 +553,10 @@ describe('controllers', function() {
         var conflictingCustomer = new Customer({
           email: existingCustomer.email,
           surname: existingCustomer.surname,
-          given_name: updateCustomerPatch.given_name,
-          gender: updateCustomerPatch.gender,
+          given_name: updatePatch.given_name,
+          gender: updatePatch.gender,
           status: existingCustomer.status,
-          list_pos: updateCustomerPatch.list_pos,
+          list_pos: updatePatch.list_pos,
           workflow_pos: existingCustomer.workflow_pos + 1,
           is_archived: existingCustomer.is_archived,
         });
@@ -566,7 +566,7 @@ describe('controllers', function() {
           request(server)
             .patch('/api/v0/customers/' + existingCustomer._id)
             .set('Accept', 'application/json')
-            .send(updateCustomerPatch)
+            .send(updatePatch)
             .expect('Content-Type', /json/)
             .expect(409)
             .end(function(err, res) {

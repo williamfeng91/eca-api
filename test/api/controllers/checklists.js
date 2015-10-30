@@ -6,11 +6,11 @@ var constants = require('../../../api/helpers/constants');
 var server = require('../../../app');
 var models = require('../../../api/models');
 var Customer = models.Customer;
-var StickyNote = models.StickyNote;
+var Checklist = models.Checklist;
 
 describe('controllers', function() {
 
-  describe('stickyNotes', function() {
+  describe('checklists', function() {
 
     var existingCustomer = new Customer({
       email: 'a@b.com',
@@ -25,8 +25,8 @@ describe('controllers', function() {
       updated_at: new Date(),
     });
 
-    var existingStickyNote = new StickyNote({
-      text: 'existingNote',
+    var existingChecklist = new Checklist({
+      name: 'existingChecklist',
       pos: 99999,
       created_at: new Date(),
       updated_at: new Date(),
@@ -49,9 +49,9 @@ describe('controllers', function() {
       Customer.findById(existingCustomer._id, function(err, customer) {
         if (err) throw err;
         if (!customer) throw 'Customer not found';
-        // empty the array and insert one sticky note to be used by test cases
-        customer.sticky_notes = [];
-        customer.sticky_notes.push(existingStickyNote);
+        // empty the array and insert one checklist to be used by test cases
+        customer.checklists = [];
+        customer.checklists.push(existingChecklist);
         customer.save(function(err) {
           if (err) throw err;
           done();
@@ -59,10 +59,10 @@ describe('controllers', function() {
       });
     });
 
-    describe('POST /customers/{customerId}/sticky-notes', function() {
+    describe('POST /customers/{customerId}/checklists', function() {
 
-      var newStickyNote = {
-        text: 'new note',
+      var newChecklist = {
+        name: 'new note',
       };
 
       it('should return 201 when inserting into empty database',
@@ -72,22 +72,22 @@ describe('controllers', function() {
           if (err) throw err;
           if (!customer) throw 'Customer not found';
           // empty the array
-          customer.sticky_notes = [];
+          customer.checklists = [];
           customer.save(function(err) {
             if (err) throw err;
 
             request(server)
               .post('/api/v0/customers/' + existingCustomer._id
-                  + '/sticky-notes')
+                  + '/checklists')
               .set('Accept', 'application/json')
-              .send(newStickyNote)
+              .send(newChecklist)
               .expect('Content-Type', /json/)
               .expect(201)
               .end(function(err, res) {
                 should.not.exist(err);
 
                 res.body.should.have.property('_id');
-                res.body.text.should.eql(newStickyNote.text);
+                res.body.name.should.eql(newChecklist.name);
                 res.body.pos.should.eql(constants.POS_START_VAL);
                 res.body.should.have.property('created_at');
                 res.body.should.have.property('updated_at');
@@ -103,18 +103,18 @@ describe('controllers', function() {
       function(done) {
 
         request(server)
-          .post('/api/v0/customers/' + existingCustomer._id + '/sticky-notes')
+          .post('/api/v0/customers/' + existingCustomer._id + '/checklists')
           .set('Accept', 'application/json')
-          .send(newStickyNote)
+          .send(newChecklist)
           .expect('Content-Type', /json/)
           .expect(201)
           .end(function(err, res) {
             should.not.exist(err);
 
             res.body.should.have.property('_id');
-            res.body.text.should.eql(newStickyNote.text);
+            res.body.name.should.eql(newChecklist.name);
             res.body.pos.should.eql(
-              existingStickyNote.pos + constants.POS_AUTO_INCREMENT);
+              existingChecklist.pos + constants.POS_AUTO_INCREMENT);
             res.body.should.have.property('created_at');
             res.body.should.have.property('updated_at');
             res.body.created_at.should.eql(res.body.updated_at);
@@ -126,7 +126,7 @@ describe('controllers', function() {
       it('should return 400 if a parameter is missing', function(done) {
 
         request(server)
-          .post('/api/v0/customers/' + existingCustomer._id + '/sticky-notes')
+          .post('/api/v0/customers/' + existingCustomer._id + '/checklists')
           .set('Accept', 'application/json')
           .send({})
           .expect('Content-Type', /json/)
@@ -144,10 +144,10 @@ describe('controllers', function() {
       it('should return 400 if a parameter has invalid value', function(done) {
 
         request(server)
-          .post('/api/v0/customers/' + existingCustomer._id + '/sticky-notes')
+          .post('/api/v0/customers/' + existingCustomer._id + '/checklists')
           .set('Accept', 'application/json')
           .send({
-            text: 'new note',
+            name: 'new note',
             pos: 'not_a_number',
           })
           .expect('Content-Type', /json/)
@@ -165,9 +165,9 @@ describe('controllers', function() {
       it('should return 404 if customer id is invalid', function(done) {
 
         request(server)
-          .post('/api/v0/customers/000/sticky-notes')
+          .post('/api/v0/customers/000/checklists')
           .set('Accept', 'application/json')
-          .send(newStickyNote)
+          .send(newChecklist)
           .expect('Content-Type', /json/)
           .expect(404)
           .end(function(err, res) {
@@ -183,9 +183,9 @@ describe('controllers', function() {
       it('should return 404 if customer not found', function(done) {
 
         request(server)
-          .post('/api/v0/customers/000000000000000000000000/sticky-notes')
+          .post('/api/v0/customers/000000000000000000000000/checklists')
           .set('Accept', 'application/json')
-          .send(newStickyNote)
+          .send(newChecklist)
           .expect('Content-Type', /json/)
           .expect(404)
           .end(function(err, res) {
@@ -202,11 +202,11 @@ describe('controllers', function() {
       function(done) {
 
         request(server)
-          .post('/api/v0/customers/' + existingCustomer._id + '/sticky-notes')
+          .post('/api/v0/customers/' + existingCustomer._id + '/checklists')
           .set('Accept', 'application/json')
           .send({
-            text: newStickyNote.text,
-            pos: existingStickyNote.pos,
+            name: newChecklist.name,
+            pos: existingChecklist.pos,
           })
           .expect('Content-Type', /json/)
           .expect(409)
@@ -221,12 +221,12 @@ describe('controllers', function() {
       });
     });
 
-    describe('GET /customers/{customerId}/sticky-notes', function() {
+    describe('GET /customers/{customerId}/checklists', function() {
 
       it('should return 200 and the resources', function(done) {
 
         request(server)
-          .get('/api/v0/customers/' + existingCustomer._id + '/sticky-notes')
+          .get('/api/v0/customers/' + existingCustomer._id + '/checklists')
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(200)
@@ -234,32 +234,32 @@ describe('controllers', function() {
             should.not.exist(err);
 
             res.body.should.be.instanceOf(Array).and.have.lengthOf(1);
-            res.body[0]._id.should.be.eql(existingStickyNote._id.toString());
+            res.body[0]._id.should.be.eql(existingChecklist._id.toString());
 
             done();
           });
       });
     });
 
-    describe('GET /sticky-notes/{stickyNoteId}', function() {
+    describe('GET /checklists/{checklistId}', function() {
 
       it('should return 200 and the resource', function(done) {
 
         request(server)
-          .get('/api/v0/sticky-notes/' + existingStickyNote._id)
+          .get('/api/v0/checklists/' + existingChecklist._id)
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(200)
           .end(function(err, res) {
             should.not.exist(err);
 
-            res.body._id.should.eql(existingStickyNote._id.toString());
-            res.body.text.should.eql(existingStickyNote.text);
-            res.body.pos.should.eql(existingStickyNote.pos);
+            res.body._id.should.eql(existingChecklist._id.toString());
+            res.body.name.should.eql(existingChecklist.name);
+            res.body.pos.should.eql(existingChecklist.pos);
             new Date(res.body.created_at).should
-              .eql(existingStickyNote.created_at);
+              .eql(existingChecklist.created_at);
             new Date(res.body.updated_at).should
-              .eql(existingStickyNote.updated_at);
+              .eql(existingChecklist.updated_at);
 
             done();
           });
@@ -268,7 +268,7 @@ describe('controllers', function() {
       it('should return 404 if id in path is invalid', function(done) {
 
         request(server)
-          .get('/api/v0/sticky-notes/000')
+          .get('/api/v0/checklists/000')
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(404)
@@ -285,7 +285,7 @@ describe('controllers', function() {
       it('should return 404 if not found', function(done) {
 
         request(server)
-          .get('/api/v0/sticky-notes/000000000000000000000000')
+          .get('/api/v0/checklists/000000000000000000000000')
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(404)
@@ -300,32 +300,32 @@ describe('controllers', function() {
       });
     });
 
-    describe('PUT /sticky-notes/{stickyNoteId}', function() {
+    describe('PUT /checklists/{checklistId}', function() {
 
-      var updatedStickyNote = {
-        _id: existingStickyNote._id.toString(),
-        text: 'updated note',
+      var updatedChecklist = {
+        _id: existingChecklist._id.toString(),
+        name: 'updated note',
         pos: 88888,
       };
 
       it('should return 200 if successfully updated', function(done) {
 
         request(server)
-          .put('/api/v0/sticky-notes/' + existingStickyNote._id)
+          .put('/api/v0/checklists/' + existingChecklist._id)
           .set('Accept', 'application/json')
-          .send(updatedStickyNote)
+          .send(updatedChecklist)
           .expect('Content-Type', /json/)
           .expect(200)
           .end(function(err, res) {
             should.not.exist(err);
 
-            res.body._id.should.eql(existingStickyNote._id.toString());
-            res.body.text.should.eql(updatedStickyNote.text);
-            res.body.pos.should.eql(updatedStickyNote.pos);
+            res.body._id.should.eql(existingChecklist._id.toString());
+            res.body.name.should.eql(updatedChecklist.name);
+            res.body.pos.should.eql(updatedChecklist.pos);
             new Date(res.body.created_at).should
-              .eql(existingStickyNote.created_at);
+              .eql(existingChecklist.created_at);
             new Date(res.body.updated_at).should.be
-              .greaterThan(existingStickyNote.updated_at);
+              .greaterThan(existingChecklist.updated_at);
 
             done();
           });
@@ -334,7 +334,7 @@ describe('controllers', function() {
       it('should return 400 if a parameter is missing', function(done) {
 
         request(server)
-          .put('/api/v0/sticky-notes/' + existingStickyNote._id)
+          .put('/api/v0/checklists/' + existingChecklist._id)
           .set('Accept', 'application/json')
           .send({})
           .expect('Content-Type', /json/)
@@ -352,11 +352,11 @@ describe('controllers', function() {
       it('should return 400 if a parameter has invalid value', function(done) {
 
         request(server)
-          .put('/api/v0/sticky-notes/' + existingStickyNote._id)
+          .put('/api/v0/checklists/' + existingChecklist._id)
           .set('Accept', 'application/json')
           .send({
-            _id: existingStickyNote._id.toString(),
-            text: existingStickyNote.text,
+            _id: existingChecklist._id.toString(),
+            name: existingChecklist.name,
             pos: 'not_a_number',
           })
           .expect('Content-Type', /json/)
@@ -374,9 +374,9 @@ describe('controllers', function() {
       it('should return 404 if id in path is invalid', function(done) {
 
         request(server)
-          .put('/api/v0/sticky-notes/000')
+          .put('/api/v0/checklists/000')
           .set('Accept', 'application/json')
-          .send(updatedStickyNote)
+          .send(updatedChecklist)
           .expect('Content-Type', /json/)
           .expect(404)
           .end(function(err, res) {
@@ -392,12 +392,12 @@ describe('controllers', function() {
       it('should return 404 if not found', function(done) {
 
         request(server)
-          .put('/api/v0/sticky-notes/000000000000000000000000')
+          .put('/api/v0/checklists/000000000000000000000000')
           .set('Accept', 'application/json')
           .send({
             _id: '000000000000000000000000',
-            text: existingStickyNote.text,
-            pos: existingStickyNote.pos,
+            name: existingChecklist.name,
+            pos: existingChecklist.pos,
           })
           .expect('Content-Type', /json/)
           .expect(404)
@@ -414,22 +414,22 @@ describe('controllers', function() {
       it('should return 409 if a parameter has conflicting value',
       function(done) {
 
-        // insert another sticky note to produce conflict
+        // insert another checklist to produce conflict
         Customer.findById(existingCustomer._id, function(err, customer) {
           if (err) throw err;
           if (!customer) throw 'Customer not found';
-          var conflictingStickyNote = new StickyNote({
-            text: updatedStickyNote.text,
-            pos: updatedStickyNote.pos,
+          var conflictingChecklist = new Checklist({
+            name: updatedChecklist.name,
+            pos: updatedChecklist.pos,
           });
-          customer.sticky_notes.push(conflictingStickyNote);
+          customer.checklists.push(conflictingChecklist);
           customer.save(function(err) {
             if (err) throw err;
 
             request(server)
-              .put('/api/v0/sticky-notes/' + updatedStickyNote._id)
+              .put('/api/v0/checklists/' + updatedChecklist._id)
               .set('Accept', 'application/json')
-              .send(updatedStickyNote)
+              .send(updatedChecklist)
               .expect('Content-Type', /json/)
               .expect(409)
               .end(function(err, res) {
@@ -445,17 +445,17 @@ describe('controllers', function() {
       });
     });
 
-    describe('PATCH /sticky-notes/{stickyNoteId}', function() {
+    describe('PATCH /checklists/{checklistId}', function() {
 
       var updatePatch = {
-        text: 'updated note',
+        name: 'updated note',
         pos: 88888,
       };
 
       it('should return 200 if successfully updated', function(done) {
 
         request(server)
-          .patch('/api/v0/sticky-notes/' + existingStickyNote._id)
+          .patch('/api/v0/checklists/' + existingChecklist._id)
           .set('Accept', 'application/json')
           .send(updatePatch)
           .expect('Content-Type', /json/)
@@ -463,13 +463,13 @@ describe('controllers', function() {
           .end(function(err, res) {
             should.not.exist(err);
 
-            res.body._id.should.eql(existingStickyNote._id.toString());
-            res.body.text.should.eql(updatePatch.text);
+            res.body._id.should.eql(existingChecklist._id.toString());
+            res.body.name.should.eql(updatePatch.name);
             res.body.pos.should.eql(updatePatch.pos);
             new Date(res.body.created_at).should
-              .eql(existingStickyNote.created_at);
+              .eql(existingChecklist.created_at);
             new Date(res.body.updated_at).should.be
-              .greaterThan(existingStickyNote.updated_at);
+              .greaterThan(existingChecklist.updated_at);
 
             done();
           });
@@ -478,10 +478,10 @@ describe('controllers', function() {
       it('should return 400 if a parameter has invalid value', function(done) {
 
         request(server)
-          .patch('/api/v0/sticky-notes/' + existingStickyNote._id)
+          .patch('/api/v0/checklists/' + existingChecklist._id)
           .set('Accept', 'application/json')
           .send({
-            text: updatePatch.text,
+            name: updatePatch.name,
             pos: 'not_a_number',
           })
           .expect('Content-Type', /json/)
@@ -499,7 +499,7 @@ describe('controllers', function() {
       it('should return 404 if id in path is invalid', function(done) {
 
         request(server)
-          .patch('/api/v0/sticky-notes/000')
+          .patch('/api/v0/checklists/000')
           .set('Accept', 'application/json')
           .send(updatePatch)
           .expect('Content-Type', /json/)
@@ -517,7 +517,7 @@ describe('controllers', function() {
       it('should return 404 if not found', function(done) {
 
         request(server)
-          .patch('/api/v0/sticky-notes/000000000000000000000000')
+          .patch('/api/v0/checklists/000000000000000000000000')
           .set('Accept', 'application/json')
           .send(updatePatch)
           .expect('Content-Type', /json/)
@@ -535,20 +535,20 @@ describe('controllers', function() {
       it('should return 409 if a parameter has conflicting value',
       function(done) {
 
-        // insert another sticky note to produce conflict
+        // insert another checklist to produce conflict
         Customer.findById(existingCustomer._id, function(err, customer) {
           if (err) throw err;
           if (!customer) throw 'Customer not found';
-          var conflictingStickyNote = new StickyNote({
-            text: updatePatch.text,
+          var conflictingChecklist = new Checklist({
+            name: updatePatch.name,
             pos: updatePatch.pos,
           });
-          customer.sticky_notes.push(conflictingStickyNote);
+          customer.checklists.push(conflictingChecklist);
           customer.save(function(err) {
             if (err) throw err;
 
             request(server)
-              .patch('/api/v0/sticky-notes/' + existingStickyNote._id)
+              .patch('/api/v0/checklists/' + existingChecklist._id)
               .set('Accept', 'application/json')
               .send(updatePatch)
               .expect('Content-Type', /json/)
@@ -566,12 +566,12 @@ describe('controllers', function() {
       });
     });
 
-    describe('DELETE /sticky-notes/{stickyNoteId}', function() {
+    describe('DELETE /checklists/{checklistId}', function() {
 
       it('should return 204 if successful', function(done) {
 
         request(server)
-          .delete('/api/v0/sticky-notes/' + existingStickyNote._id)
+          .delete('/api/v0/checklists/' + existingChecklist._id)
           .set('Accept', 'application/json')
           .expect(204)
           .end(function(err, res) {
@@ -584,7 +584,7 @@ describe('controllers', function() {
       it('should return 404 if id in path is invalid', function(done) {
 
         request(server)
-          .delete('/api/v0/sticky-notes/000')
+          .delete('/api/v0/checklists/000')
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(404)
@@ -601,7 +601,7 @@ describe('controllers', function() {
       it('should return 404 if not found', function(done) {
 
         request(server)
-          .delete('/api/v0/sticky-notes/000000000000000000000000')
+          .delete('/api/v0/checklists/000000000000000000000000')
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(404)
