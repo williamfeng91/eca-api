@@ -11,6 +11,7 @@
   "dependencies": {
     "boom": "^2.9.0",
     "express": "^4.12.3",
+    "fast-csv": "^0.6.0",
     "file-stream-rotator": "0.0.6",
     "json-merge-patch": "^0.2.3",
     "log4js": "^0.6.27",

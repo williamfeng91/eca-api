@@ -5,7 +5,7 @@ var Schema = mongoose.Schema;
 var WorkflowStatusSchema = new Schema({
   name: { type: String, required: true },
   color: { type: String, required: true },
-  pos: { type: Number, required: true, unique: true }
+  pos: { type: Number, required: true, unique: true, sparse: true }
 },
 {
   timestamps: {
