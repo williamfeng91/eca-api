@@ -44,7 +44,7 @@ function createStickyNote(req, res, next) {
     if (req.body.pos != null) {
       // if pos is specified
       // look for duplicate sticky note
-      for (var i in customer.sticky_notes) {
+      for (var i = 0; i < customer.sticky_notes.length; i++) {
         if (customer.sticky_notes[i].pos === req.body.pos) {
           // found duplicate
           return next(new boom.conflict(DUPLICATE_FOUND));
@@ -55,7 +55,7 @@ function createStickyNote(req, res, next) {
       // if pos is not specified
       // find the current maximum pos
       var maxPos = 0;
-      for (var i in customer.sticky_notes) {
+      for (var i = 0; i < customer.sticky_notes.length; i++) {
         if (customer.sticky_notes[i].pos > maxPos) {
           maxPos = customer.sticky_notes[i].pos;
         }
@@ -143,7 +143,7 @@ function updateStickyNote(req, res, next) {
       return next(new boom.notFound(STICKY_NOTE_NOT_FOUND));
     }
     // look for duplicate sticky note
-    for (var i in customer.sticky_notes) {
+    for (var i = 0; i < customer.sticky_notes.length; i++) {
       if (customer.sticky_notes[i]._id !== _stickyNoteId
         && customer.sticky_notes[i].pos === updatedStickyNote.pos) {
         // found duplicate
@@ -185,7 +185,7 @@ function partialUpdateStickyNote(req, res, next) {
     }
     if (updatePatch.pos) {
       // look for duplicate sticky note
-      for (var i in customer.sticky_notes) {
+      for (var i = 0; i < customer.sticky_notes.length; i++) {
         if (customer.sticky_notes[i]._id !== _stickyNoteId
           && customer.sticky_notes[i].pos === updatePatch.pos) {
           // found duplicate

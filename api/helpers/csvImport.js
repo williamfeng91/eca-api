@@ -2,9 +2,9 @@ var mongoose = require('mongoose');
 var csv = require('fast-csv');
 
 var models = require('../models');
+mongoose.connect('mongodb://localhost/test');
 
 module.exports.importFile = function(filePath, modelName) {
-  mongoose.connect('mongodb://localhost/test');
   csv
     .fromPath(filePath, {headers: true})
     .on('data', function(data) {

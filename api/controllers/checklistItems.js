@@ -47,7 +47,7 @@ function createChecklistItem(req, res, next) {
     if (req.body.pos != null) {
       // if pos is specified
       // look for duplicate checklistItem
-      for (var i in checklist.items) {
+      for (var i = 0; i < checklist.items.length; i++) {
         if (checklist.items[i].pos === req.body.pos) {
           // found duplicate
           return next(new boom.conflict(DUPLICATE_FOUND));
@@ -58,7 +58,7 @@ function createChecklistItem(req, res, next) {
       // if pos is not specified
       // find the current maximum pos
       var maxPos = 0;
-      for (var i in checklist.items) {
+      for (var i = 0; i < checklist.items.length; i++) {
         if (checklist.items[i].pos > maxPos) {
           maxPos = checklist.items[i].pos;
         }
@@ -170,7 +170,7 @@ function updateChecklistItem(req, res, next) {
     }
     var checklist = customer.checklists.id(_checklistId);
     // look for duplicate checklistItem
-    for (var i in checklist.items) {
+    for (var i = 0; i < checklist.items.length; i++) {
       if (checklist.items[i]._id !== _checklistItemId
         && checklist.items[i].pos === updatedChecklistItem.pos) {
         // found duplicate
@@ -223,8 +223,8 @@ function partialUpdateChecklistItem(req, res, next) {
     }
     var checklist = customer.checklists.id(_checklistId);
     if (updatePatch.pos) {
-      // look for duplicate checklistItem
-      for (var i in checklist.items) {
+      // look for duplicate checklist item
+      for (var i = 0; i < checklist.items.length; i++) {
         if (checklist.items[i]._id !== _checklistItemId
           && checklist.items[i].pos === updatePatch.pos) {
           // found duplicate
